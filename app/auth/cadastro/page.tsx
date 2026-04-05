@@ -26,6 +26,10 @@ export default function CadastroPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [isCheckingEmail, setIsCheckingEmail] = useState(false)
+  const [nomeError, setNomeError] = useState<string>("")
+  const [telefoneError, setTelefoneError] = useState<string>("")
+  const [senhaError, setSenhaError] = useState<string>("")
+  const [repeatSenhaError, setRepeatSenhaError] = useState<string>("")
   const router = useRouter()
 
   const formatTelefone = (value: string) => {
@@ -73,26 +77,36 @@ export default function CadastroPage() {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     const supabase = createClient()
+
+    let hasError = false
+    
+    if (!nome) { setNomeError("O nome é obrigatório."); hasError = true } else setNomeError("")
+    if (telefone && telefone.length < 14) { setTelefoneError("O telefone deve ser completo (DDD + número)."); hasError = true } else setTelefoneError("")
+    if (!email) { setEmailError("O e-mail é obrigatório."); hasError = true } else if (emailError === "Este email já está cadastrado") { hasError = true } else if (!email.includes("@")) { setEmailError("E-mail inválido."); hasError = true }
+    
+    if (!password) { 
+        setSenhaError("A senha é obrigatória.")
+        hasError = true 
+    } else if (password.length < 8) {
+        setSenhaError("A senha deve ter pelo menos 8 caracteres.")
+        hasError = true
+    } else setSenhaError("")
+    
+    if (!repeatPassword) {
+        setRepeatSenhaError("A confirmação de senha é obrigatória.")
+        hasError = true
+    } else if (password !== repeatPassword) {
+        setRepeatSenhaError("As senhas não coincidem.")
+        hasError = true
+    } else setRepeatSenhaError("")
+    
+    if (hasError) {
+      setError(null)
+      return
+    }
+
     setIsLoading(true)
     setError(null)
-
-    if (password.length < 8) {
-      setError("A senha deve ter pelo menos 8 caracteres")
-      setIsLoading(false)
-      return
-    }
-
-    if (password !== repeatPassword) {
-      setError("As senhas não coincidem")
-      setIsLoading(false)
-      return
-    }
-
-    if (emailError) {
-      setError("Por favor, corrija os erros antes de continuar")
-      setIsLoading(false)
-      return
-    }
 
     try {
       console.log("[v0] Iniciando cadastro com dados:", { nome, telefone, email, tipo })
@@ -178,17 +192,17 @@ export default function CadastroPage() {
                 <div className="flex flex-col gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="nome" className="text-white">
-                      Nome completo
+                      Nome completo *
                     </Label>
                     <Input
                       id="nome"
                       type="text"
-                      required
                       value={nome}
-                      onChange={(e) => setNome(e.target.value)}
+                      onChange={(e) => { setNome(e.target.value); if (nomeError) setNomeError("") }}
                       placeholder="Seu Nome"
-                      className="bg-zinc-800 border-zinc-700 text-white"
+                      className={`bg-zinc-800 border-zinc-700 text-white ${nomeError ? "border-red-500" : ""}`}
                     />
+                    {nomeError && <p className="text-xs text-red-400">{nomeError}</p>}
                   </div>
 
                   <div className="grid gap-2">
@@ -198,26 +212,25 @@ export default function CadastroPage() {
                     <Input
                       id="telefone"
                       type="tel"
-                      required
                       value={telefone}
-                      onChange={(e) => setTelefone(formatTelefone(e.target.value))}
+                      onChange={(e) => { setTelefone(formatTelefone(e.target.value)); if (telefoneError) setTelefoneError("") }}
                       placeholder="(00) 00000-0000"
                       maxLength={15}
-                      className="bg-zinc-800 border-zinc-700 text-white"
+                      className={`bg-zinc-800 border-zinc-700 text-white ${telefoneError ? "border-red-500" : ""}`}
                     />
+                    {telefoneError && <p className="text-xs text-red-400">{telefoneError}</p>}
                   </div>
 
                   <div className="grid gap-2">
                     <Label htmlFor="email" className="text-white">
-                      Email
+                      E-mail *
                     </Label>
                     <Input
                       id="email"
                       type="email"
                       placeholder="seu@email.com"
-                      required
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError(null) }}
                       onBlur={handleEmailBlur}
                       className={`bg-zinc-800 border-zinc-700 text-white ${emailError ? "border-red-500" : ""}`}
                     />
@@ -231,7 +244,7 @@ export default function CadastroPage() {
                   </div>
 
                   <div className="grid gap-2">
-                    <Label className="text-white">Tipo de conta</Label>
+                    <Label className="text-white">Tipo de conta *</Label>
                     <RadioGroup value={tipo} onValueChange={(value) => setTipo(value as "voluntario" | "gestor")}>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="voluntario" id="voluntario" />
@@ -250,17 +263,16 @@ export default function CadastroPage() {
 
                   <div className="grid gap-2">
                     <Label htmlFor="password" className="text-white">
-                      Senha
+                      Senha *
                     </Label>
                     <div className="relative">
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
-                        required
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => { setPassword(e.target.value); if (senhaError) setSenhaError("") }}
                         placeholder="Sua senha"
-                        className="bg-zinc-800 border-zinc-700 text-white pr-10"
+                        className={`bg-zinc-800 border-zinc-700 text-white pr-10 ${senhaError ? "border-red-500" : ""}`}
                       />
                       <button
                         type="button"
@@ -270,21 +282,22 @@ export default function CadastroPage() {
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
                     </div>
+                    {senhaError && <p className="text-xs text-red-400 mt-1">{senhaError}</p>}
                   </div>
 
                   <div className="grid gap-2">
                     <Label htmlFor="repeat-password" className="text-white">
-                      Confirmar senha
+                      Confirmar senha *
                     </Label>
                     <Input
                       id="repeat-password"
                       type="password"
-                      required
                       value={repeatPassword}
-                      onChange={(e) => setRepeatPassword(e.target.value)}
+                      onChange={(e) => { setRepeatPassword(e.target.value); if (repeatSenhaError) setRepeatSenhaError("") }}
                       placeholder="Sua senha confirmada"
-                      className="bg-zinc-800 border-zinc-700 text-white"
+                      className={`bg-zinc-800 border-zinc-700 text-white ${repeatSenhaError ? "border-red-500" : ""}`}
                     />
+                    {repeatSenhaError && <p className="text-xs text-red-400">{repeatSenhaError}</p>}
                     <div className="flex flex-col gap-1 text-xs mt-1">
                       <div className="flex items-center gap-2">
                         {passwordHas8Chars ? (

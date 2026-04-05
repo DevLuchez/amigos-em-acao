@@ -146,23 +146,29 @@ export default function VisaoGeralGestor() {
         })}
       </div>
 
-      {eventosViabilidade.length > 0 && (
-        <Card className="bg-zinc-900 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-white">Status de Viabilidade dos Eventos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
+      <Card className="bg-zinc-900 border-zinc-800">
+        <CardHeader>
+          <CardTitle className="text-white">Status de Viabilidade dos Eventos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow className="border-zinc-800">
+                <TableHead className="text-zinc-400">Evento</TableHead>
+                <TableHead className="text-zinc-400">Data Agendada</TableHead>
+                <TableHead className="text-zinc-400 text-center">Inscritos / Mínimo</TableHead>
+                <TableHead className="text-zinc-400 text-center">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {eventosViabilidade.length === 0 ? (
                 <TableRow className="border-zinc-800">
-                  <TableHead className="text-zinc-400">Evento</TableHead>
-                  <TableHead className="text-zinc-400">Data Agendada</TableHead>
-                  <TableHead className="text-zinc-400 text-center">Inscritos / Mínimo</TableHead>
-                  <TableHead className="text-zinc-400 text-center">Status</TableHead>
+                  <TableCell colSpan={4} className="text-center text-zinc-400 py-6">
+                    Não há eventos futuros agendados no momento.
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {eventosViabilidade.map((evento) => {
+              ) : (
+                eventosViabilidade.map((evento) => {
                   const { date } = formatEventoDateTime(evento.data)
                   return (
                     <TableRow key={evento.id} className="border-zinc-800">
@@ -191,12 +197,12 @@ export default function VisaoGeralGestor() {
                       </TableCell>
                     </TableRow>
                   )
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+                })
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   )
 }

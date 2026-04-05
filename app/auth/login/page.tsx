@@ -31,6 +31,10 @@ export default function LoginPage() {
       }
       // Se não houver erro, a Server Action já fez o redirect
     } catch (error: unknown) {
+      if (error instanceof Error && error.message === "NEXT_REDIRECT") {
+        // O Next.js usa esse erro internamente para fazer o redirect, então apenas ignoramos
+        return
+      }
       setError(error instanceof Error ? error.message : "Erro ao fazer login")
       setIsLoading(false)
     }

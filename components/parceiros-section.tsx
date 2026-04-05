@@ -14,9 +14,19 @@ export default function ParceirosSection() {
       url: "https://www.weg.net/",
     },
     {
+      name: "Católica SC",
+      logo: "/images/parceiros/catolicasc-logo.png",
+      url: "https://www.catolicasc.org.br/",
+    },
+    {
       name: "Colégio Marista São Luís",
       logo: "/images/parceiros/marista-logo.png",
       url: "https://marista.edu.br/saoluis/",
+    },
+    {
+      name: "Alfa Rede de Ensino",
+      logo: "/images/parceiros/alfa-logo.png",
+      url: "https://www.ensinoalfa.com.br/",
     },
     {
       name: "Sleep Way Pijamas e Cia",
@@ -32,11 +42,6 @@ export default function ParceirosSection() {
       name: "Receituário Farmácia Magistral",
       logo: "/images/parceiros/receituario-logo.png",
       url: "https://www.receituario.com.br/",
-    },
-    {
-      name: "Alfa Rede de Ensino",
-      logo: "/images/parceiros/alfa-logo.png",
-      url: "https://www.ensinoalfa.com.br/",
     },
     {
       name: "Lili & Naty Pilates",

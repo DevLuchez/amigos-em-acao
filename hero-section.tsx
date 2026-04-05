@@ -132,31 +132,43 @@ export default function HeroSection() {
 
       {/* Hero Content */}
       <div className="relative z-10 flex h-full items-center justify-center px-6 pt-20">
-        <div className="text-center text-white max-w-4xl">
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-wider mb-4 leading-none">
-            AMIGOS
-            <br />
-            EM AÇÃO
-          </h1>
+        <div className="flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16 max-w-6xl w-full">
+          {/* Logo da Associação */}
+          <div className="shrink-0 drop-shadow-2xl transition-transform duration-700 hover:scale-105">
+            <img
+              src="/images/amigos-em-acao-logo.png"
+              alt="Logo Amigos em Ação"
+              className="w-56 sm:w-64 md:w-80 lg:w-96 object-contain drop-shadow-[0_0_25px_rgba(255,255,255,0.15)]"
+            />
+          </div>
 
-          <p className="text-xl md:text-2xl font-light tracking-wide mb-8 text-gray-200">
-            <span className="font-bold">Sua doação</span> em movimento, <span className="font-bold">Nossa ação</span> em
-            transformação
-          </p>
+          <div className="flex flex-col items-center text-center text-white max-w-3xl">
+            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-wider mb-4 leading-none drop-shadow-lg">
+              AMIGOS
+              <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">
+                EM AÇÃO
+              </span>
+            </h1>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link
-              href="/auth/cadastro"
-              className="border-2 border-white text-white px-8 py-3 rounded-full font-semibold text-lg tracking-wide hover:bg-white hover:text-black transition-all duration-300"
-            >
-              Quero ajudar
-            </Link>
-            <Link
-              href="/beneficiado/cadastro"
-              className="border-2 border-white text-white px-8 py-3 rounded-full font-semibold text-lg tracking-wide hover:bg-white hover:text-black transition-all duration-300"
-            >
-              Procuro ajuda
-            </Link>
+            <p className="text-xl md:text-2xl font-light tracking-wide mb-8 text-gray-200 drop-shadow-md">
+              <span className="font-bold">Sua doação</span> em movimento, <span className="font-bold">Nossa ação</span> em transformação
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center relative z-20">
+              <Link
+                href="/auth/cadastro"
+                className="border-2 border-white bg-white/10 backdrop-blur-sm text-white px-8 py-3 rounded-full font-semibold text-lg tracking-wide hover:bg-white hover:text-black hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all duration-300"
+              >
+                Quero ajudar
+              </Link>
+              <Link
+                href="/beneficiado/cadastro"
+                className="border-2 border-transparent bg-white/10 backdrop-blur-sm text-white px-8 py-3 rounded-full font-semibold text-lg tracking-wide hover:bg-white hover:text-black hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.4)] transition-all duration-300"
+              >
+                Procuro ajuda
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -167,11 +179,10 @@ export default function HeroSection() {
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
-              className={`rounded-full transition-all duration-300 ${
-                currentSlide === index
+              className={`rounded-full transition-all duration-300 ${currentSlide === index
                   ? "w-3 h-3 bg-white"
                   : "w-2 h-2 bg-white/40 hover:bg-white/60 hover:w-2.5 hover:h-2.5"
-              }`}
+                }`}
               aria-label={`Ir para slide ${index + 1}`}
             />
           ))}
