@@ -17,38 +17,32 @@ import { useState } from "react"
 export default function BeneficiadoCadastroPage() {
   const [nome, setNome] = useState("")
   const [email, setEmail] = useState("")
-  const [cep, setCep] = useState("")
+  const [endereco, setEndereco] = useState("")
+  const [bairro, setBairro] = useState("")
+  const [cidade, setCidade] = useState("")
+  const [complemento, setComplemento] = useState("")
   const [necessidade, setNecessidade] = useState("")
   const [descricao, setDescricao] = useState("")
+  const [telefone, setTelefone] = useState("")
+  const [nomeError, setNomeError] = useState<string>("")
+  const [telefoneError, setTelefoneError] = useState<string>("")
+  const [emailError, setEmailError] = useState<string>("")
+  const [enderecoError, setEnderecoError] = useState<string>("")
+  const [bairroError, setBairroError] = useState<string>("")
+  const [cidadeError, setCidadeError] = useState<string>("")
+  const [necessidadeError, setNecessidadeError] = useState<string>("")
+  const [descricaoError, setDescricaoError] = useState<string>("")
   const [charCount, setCharCount] = useState(0)
   const MAX_DESCRICAO_LENGTH = 250
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [validandoCep, setValidandoCep] = useState(false)
   const router = useRouter()
 
-  const formatCep = (value: string) => {
+  const formatTelefone = (value: string) => {
     const numbers = value.replace(/\D/g, "")
-    if (numbers.length <= 5) return numbers
-    return `${numbers.slice(0, 5)}-${numbers.slice(5, 8)}`
-  }
-
-  const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCep(e.target.value)
-    setCep(formatted)
-  }
-
-  const validarCep = async (cepValue: string): Promise<boolean> => {
-    const cepNumbers = cepValue.replace(/\D/g, "")
-    if (cepNumbers.length !== 8) return false
-
-    try {
-      const response = await fetch(`https://viacep.com.br/ws/${cepNumbers}/json/`)
-      const data = await response.json()
-      return !data.erro
-    } catch {
-      return false
-    }
+    if (numbers.length <= 2) return numbers
+    if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,12 +50,18 @@ export default function BeneficiadoCadastroPage() {
     setIsLoading(true)
     setError(null)
 
-    setValidandoCep(true)
-    const cepValido = await validarCep(cep)
-    setValidandoCep(false)
+    let hasError = false
+    
+    if (!nome) { setNomeError("O nome é obrigatório."); hasError = true } else setNomeError("")
+    if (!telefone) { setTelefoneError("O telefone é obrigatório."); hasError = true } else if (telefone.length < 14) { setTelefoneError("O telefone deve ser completo (DDD + número)."); hasError = true } else setTelefoneError("")
+    if (email && !email.includes("@")) { setEmailError("E-mail inválido."); hasError = true } else setEmailError("")
+    if (!endereco) { setEnderecoError("O endereço é obrigatório."); hasError = true } else setEnderecoError("")
+    if (!bairro) { setBairroError("O bairro é obrigatório."); hasError = true } else setBairroError("")
+    if (!cidade) { setCidadeError("A cidade é obrigatória."); hasError = true } else setCidadeError("")
+    if (!necessidade) { setNecessidadeError("Selecione uma necessidade."); hasError = true } else setNecessidadeError("")
+    if (!descricao) { setDescricaoError("A descrição é obrigatória."); hasError = true } else setDescricaoError("")
 
-    if (!cepValido) {
-      setError("CEP inválido. Por favor, verifique o CEP informado.")
+    if (hasError) {
       setIsLoading(false)
       return
     }
@@ -74,7 +74,11 @@ export default function BeneficiadoCadastroPage() {
         .insert({
           nome,
           email,
-          cep,
+          telefone,
+          endereco,
+          bairro,
+          cidade,
+          complemento,
           necessidade,
           descricao,
         })
@@ -128,41 +132,102 @@ export default function BeneficiadoCadastroPage() {
                     <Input
                       id="nome"
                       type="text"
-                      required
                       value={nome}
-                      onChange={(e) => setNome(e.target.value)}
+                      onChange={(e) => { setNome(e.target.value); if (nomeError) setNomeError("") }}
                       placeholder="Seu Nome"
-                      className="bg-zinc-800 border-zinc-700 text-white"
+                      className={`bg-zinc-800 border-zinc-700 text-white ${nomeError ? "border-red-500" : ""}`}
                     />
+                    {nomeError && <p className="text-xs text-red-400">{nomeError}</p>}
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="telefone" className="text-white">
+                      Telefone *
+                    </Label>
+                    <Input
+                      id="telefone"
+                      type="tel"
+                      value={telefone}
+                      onChange={(e) => { setTelefone(formatTelefone(e.target.value)); if (telefoneError) setTelefoneError("") }}
+                      placeholder="(00) 00000-0000"
+                      maxLength={15}
+                      className={`bg-zinc-800 border-zinc-700 text-white ${telefoneError ? "border-red-500" : ""}`}
+                    />
+                    {telefoneError && <p className="text-xs text-red-400">{telefoneError}</p>}
                   </div>
 
                   <div className="grid gap-2">
                     <Label htmlFor="email" className="text-white">
-                      Email *
+                      E-mail
                     </Label>
                     <Input
                       id="email"
                       type="email"
-                      required
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => { setEmail(e.target.value); if (emailError) setEmailError("") }}
                       placeholder="seu@email.com"
-                      className="bg-zinc-800 border-zinc-700 text-white"
+                      className={`bg-zinc-800 border-zinc-700 text-white ${emailError ? "border-red-500" : ""}`}
                     />
+                    {emailError && <p className="text-xs text-red-400">{emailError}</p>}
                   </div>
 
                   <div className="grid gap-2">
-                    <Label htmlFor="cep" className="text-white">
-                      CEP *
+                    <Label htmlFor="endereco" className="text-white">
+                      Endereço (Rua, Av., etc.) *
                     </Label>
                     <Input
-                      id="cep"
+                      id="endereco"
                       type="text"
-                      required
-                      value={cep}
-                      onChange={handleCepChange}
-                      placeholder="00000-000"
-                      maxLength={9}
+                      value={endereco}
+                      onChange={(e) => { setEndereco(e.target.value); if (enderecoError) setEnderecoError("") }}
+                      placeholder="Ex: Rua das Flores, 123"
+                      className={`bg-zinc-800 border-zinc-700 text-white ${enderecoError ? "border-red-500" : ""}`}
+                    />
+                    {enderecoError && <p className="text-xs text-red-400">{enderecoError}</p>}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="bairro" className="text-white">
+                        Bairro *
+                      </Label>
+                      <Input
+                        id="bairro"
+                        type="text"
+                        value={bairro}
+                        onChange={(e) => { setBairro(e.target.value); if (bairroError) setBairroError("") }}
+                        placeholder="Ex: Centro"
+                        className={`bg-zinc-800 border-zinc-700 text-white ${bairroError ? "border-red-500" : ""}`}
+                      />
+                      {bairroError && <p className="text-xs text-red-400">{bairroError}</p>}
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="cidade" className="text-white">
+                        Cidade *
+                      </Label>
+                      <Input
+                        id="cidade"
+                        type="text"
+                        value={cidade}
+                        onChange={(e) => { setCidade(e.target.value); if (cidadeError) setCidadeError("") }}
+                        placeholder="Ex: Jaraguá do Sul"
+                        className={`bg-zinc-800 border-zinc-700 text-white ${cidadeError ? "border-red-500" : ""}`}
+                      />
+                      {cidadeError && <p className="text-xs text-red-400">{cidadeError}</p>}
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="complemento" className="text-white">
+                      Complemento (Opcional)
+                    </Label>
+                    <Input
+                      id="complemento"
+                      type="text"
+                      value={complemento}
+                      onChange={(e) => setComplemento(e.target.value)}
+                      placeholder="Ponto de referência "
                       className="bg-zinc-800 border-zinc-700 text-white"
                     />
                   </div>
@@ -171,25 +236,26 @@ export default function BeneficiadoCadastroPage() {
                     <Label htmlFor="necessidade" className="text-white">
                       O que você precisa? *
                     </Label>
-                    <Select value={necessidade} onValueChange={setNecessidade} required>
-                      <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                    <Select value={necessidade} onValueChange={(v) => { setNecessidade(v); if (necessidadeError) setNecessidadeError("") }}>
+                      <SelectTrigger className={`bg-zinc-800 border-zinc-700 text-white ${necessidadeError ? "border-red-500" : ""}`}>
                         <SelectValue placeholder="Selecione uma opção" />
                       </SelectTrigger>
                       <SelectContent className="bg-zinc-800 border-zinc-700">
-                        <SelectItem value="financas" className="text-white">
-                          Finanças
+                        <SelectItem value="roupas" className="text-white">
+                          Roupas
                         </SelectItem>
-                        <SelectItem value="alimentos" className="text-white">
-                          Alimentos
+                        <SelectItem value="moveis" className="text-white">
+                          Móveis
                         </SelectItem>
-                        <SelectItem value="vestimentas" className="text-white">
-                          Vestimentas
+                        <SelectItem value="cesta_basica" className="text-white">
+                          Cesta básica
                         </SelectItem>
                         <SelectItem value="outros" className="text-white">
                           Outros
                         </SelectItem>
                       </SelectContent>
                     </Select>
+                    {necessidadeError && <p className="text-xs text-red-400">{necessidadeError}</p>}
                   </div>
 
                   <div className="grid gap-2">
@@ -199,17 +265,18 @@ export default function BeneficiadoCadastroPage() {
                     <Textarea
                       id="descricao"
                       placeholder="Conte-nos mais sobre sua necessidade e situação..."
-                      required
                       value={descricao}
                       onChange={(e) => {
                         if (e.target.value.length <= MAX_DESCRICAO_LENGTH) {
                           setDescricao(e.target.value)
                           setCharCount(e.target.value.length)
+                          if (descricaoError) setDescricaoError("")
                         }
                       }}
-                      className="bg-zinc-800 border-zinc-700 text-white min-h-[120px]"
+                      className={`bg-zinc-800 border-zinc-700 text-white min-h-[120px] ${descricaoError ? "border-red-500" : ""}`}
                       maxLength={MAX_DESCRICAO_LENGTH}
                     />
+                    {descricaoError && <p className="text-xs text-red-400">{descricaoError}</p>}
                     <p className="text-xs text-zinc-400 text-right">
                       {charCount} / {MAX_DESCRICAO_LENGTH} caracteres
                     </p>
@@ -217,8 +284,8 @@ export default function BeneficiadoCadastroPage() {
 
                   {error && <p className="text-sm text-red-500">{error}</p>}
 
-                  <Button type="submit" className="w-full" disabled={isLoading || validandoCep}>
-                    {validandoCep ? "Validando CEP..." : isLoading ? "Solicitando ajuda..." : "Enviar"}
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? "Solicitando ajuda..." : "Enviar"}
                   </Button>
                 </div>
               </form>

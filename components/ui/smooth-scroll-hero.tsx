@@ -125,7 +125,7 @@ const SmoothScrollHero: React.FC<SmoothScrollHeroProps> = ({
                 <div className="flex items-center gap-2.5 bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-md px-5 py-2.5 rounded-full border border-white/5">
                   <MessageCircle className="w-5 h-5 text-green-400" />
                   <span className="text-sm md:text-base font-medium tracking-wide">
-                    99983-2977 <span className="opacity-40 mx-1">|</span> 98822-1707
+                    99983-2944 <span className="opacity-40 mx-1">|</span> 98822-1707
                   </span>
                 </div>
 

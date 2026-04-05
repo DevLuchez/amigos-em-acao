@@ -12,7 +12,15 @@ export async function loginAction(email: string, password: string) {
   })
 
   if (error) {
-    return { error: error.message }
+    let errorMessage = "Erro ao fazer login. Verifique seus dados e tente novamente."
+    
+    if (error.message.includes("Invalid login credentials")) {
+      errorMessage = "E-mail ou senha incorretos."
+    } else if (error.message.includes("Email not confirmed")) {
+      errorMessage = "Por favor, confirme seu e-mail antes de fazer login."
+    }
+    
+    return { error: errorMessage }
   }
 
   if (!data.user) {
