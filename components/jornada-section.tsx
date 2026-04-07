@@ -8,7 +8,7 @@ export default function JornadaSection() {
   const [isMounted, setIsMounted] = useState(false)
   useEffect(() => setIsMounted(true), [])
 
-  const milestones = []
+  const milestones: any[] = []
 
   return (
     <section id="jornada" className="relative py-20 bg-white">
@@ -28,13 +28,13 @@ export default function JornadaSection() {
           </h2>
           <div className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed space-y-4">
             <p>
-              Somos um ONG com mais de 25 anos de história, juntando forças para uma causa única: tornar nossa sociedade cada vez melhor.
+              Somos uma ONG com mais de 24 anos de história, juntando forças para uma causa única: tornar nossa sociedade cada vez melhor.
             </p>
             <p>
-              Todos os anos lutamos para a diminuição da desigualdade ao nosso redor, ajudando desde cestas básicas e medicamentos a educação.
+              Todos os anos lutamos para a diminuição da desigualdade em nossa microrregião, ajudando através da doação de cestas básicas, bem como de diversas outras maneiras.
             </p>
             <p>
-              Todos os recursos obtidos através das doações são convertidos para fins sociais.
+              Todos os recursos obtidos através das doações são totalmente destinados às famílias atendidas pela ONG.
             </p>
           </div>
         </motion.div>

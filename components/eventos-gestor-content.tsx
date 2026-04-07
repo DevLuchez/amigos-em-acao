@@ -36,7 +36,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Plus, Trash2, Calendar, Edit, Eye, MoreVertical, Copy, X, CheckSquare, Search } from "lucide-react"
 import { getStatusEvento, formatEventoDateTime } from "@/lib/utils/evento-utils"
 import { stringContains } from "@/lib/utils/string-utils"
-
+import { notifyVolunteersAboutEvent } from "@/app/actions/notify-volunteers"
 type Evento = {
   id: string
   titulo: string
@@ -89,10 +89,12 @@ export default function EventosGestorContent() {
   const [qtdMinError, setQtdMinError] = useState<string>("")
 
   const categorias = [
-    { value: "alimentos", label: "Alimentos" },
-    { value: "roupas", label: "Roupas" },
-    { value: "acao_social", label: "Ação social" },
-    { value: "doacoes_variadas", label: "Doações Variadas" },
+    { value: "acao_social", label: "Ação Social" },
+    { value: "arrecadacao_mercados", label: "Arrecadação variada em Mercados" },
+    { value: "entrega_cesta_basica", label: "Entrega de cesta básica" },
+    { value: "campanha_feijoada", label: "Campanha da Feijoada" },
+    { value: "campanha_agasalho", label: "Campanha do Agasalho" },
+    { value: "campanha_natal", label: "Campanha de Natal" },
     { value: "outros", label: "Outros" },
   ]
 
@@ -156,7 +158,7 @@ export default function EventosGestorContent() {
 
     const supabase = createClient()
 
-    const { error } = await supabase.from("eventos").insert({
+    const { data: insertedEvento, error } = await supabase.from("eventos").insert({
       titulo,
       descricao,
       categoria: categoriaFinal,
@@ -164,10 +166,22 @@ export default function EventosGestorContent() {
       publico,
       quantidade_minima_voluntarios: qtdMinima,
       quantidade_maxima_voluntarios: quantidadeMaxima ? Number.parseInt(quantidadeMaxima) : null,
-    })
+    }).select().single()
 
     if (!error) {
       setIsDialogOpen(false)
+      
+      // Disparar o envio de E-mails se o evento for FUTURO
+      if (new Date(data) > new Date()) {
+        notifyVolunteersAboutEvent({
+          id: insertedEvento.id,
+          titulo: insertedEvento.titulo,
+          descricao: insertedEvento.descricao,
+          categoria: insertedEvento.categoria,
+          data: insertedEvento.data
+        }).catch((err: any) => console.error("Erro ao notificar voluntários:", err));
+      }
+
       setTituloError(""); setCategoriaError(""); setDataError(""); setQtdMinError(""); setQtdMaxError("")
       setTitulo("")
       setDescricao("")
@@ -230,6 +244,15 @@ export default function EventosGestorContent() {
       .eq("id", eventoToEdit.id)
 
     if (!error) {
+      if (new Date(data) > new Date()) {
+        notifyVolunteersAboutEvent({
+          id: eventoToEdit.id,
+          titulo,
+          descricao,
+          categoria: categoriaFinal,
+          data
+        }, "atualizado").catch((err: any) => console.error("Erro ao notificar voluntários na edição:", err));
+      }
       setIsEditDialogOpen(false)
       setEventoToEdit(null)
       setTituloError(""); setCategoriaError(""); setDataError(""); setQtdMinError(""); setQtdMaxError("")
@@ -259,11 +282,26 @@ export default function EventosGestorContent() {
 
   const handleDeleteEvento = async () => {
     if (!eventoToDelete) return
+    setIsLoading(true)
+    const evento = eventos.find(e => e.id === eventoToDelete)
     const supabase = createClient()
-    await supabase.from("eventos").delete().eq("id", eventoToDelete)
-    setDeleteDialogOpen(false)
-    setEventoToDelete(null)
-    loadEventos()
+    const { error } = await supabase.from("eventos").delete().eq("id", eventoToDelete)
+    
+    if (!error) {
+      if (evento && new Date(evento.data) > new Date()) {
+        notifyVolunteersAboutEvent({
+          id: evento.id,
+          titulo: evento.titulo,
+          descricao: evento.descricao,
+          categoria: evento.categoria,
+          data: evento.data
+        }, "excluido").catch((err: any) => console.error("Erro ao notificar cancelamento:", err));
+      }
+      setDeleteDialogOpen(false)
+      setEventoToDelete(null)
+      loadEventos()
+    }
+    setIsLoading(false)
   }
 
   const handleMarcarRealizado = async (id: string) => {
