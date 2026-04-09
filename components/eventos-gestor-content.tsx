@@ -523,15 +523,15 @@ export default function EventosGestorContent() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-zinc-900">
-            <TabsTrigger value="todos" className="data-[state=active]:bg-white data-[state=active]:text-black">
-              Todos os Eventos ({todosEventos.length})
+          <TabsList className="flex w-full bg-zinc-900">
+            <TabsTrigger value="todos" className="flex-1 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:text-black">
+              Todos ({todosEventos.length})
             </TabsTrigger>
-            <TabsTrigger value="agendados" className="data-[state=active]:bg-white data-[state=active]:text-black">
-              Eventos Futuros ({eventosAgendados.length})
+            <TabsTrigger value="agendados" className="flex-1 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:text-black">
+              Futuros ({eventosAgendados.length})
             </TabsTrigger>
-            <TabsTrigger value="realizados" className="data-[state=active]:bg-white data-[state=active]:text-black">
-              Eventos Realizados ({eventosRealizados.length})
+            <TabsTrigger value="realizados" className="flex-1 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:text-black">
+              Realizados ({eventosRealizados.length})
             </TabsTrigger>
           </TabsList>
 
