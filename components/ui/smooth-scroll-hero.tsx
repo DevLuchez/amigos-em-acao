@@ -133,7 +133,7 @@ const SmoothScrollHero: React.FC<SmoothScrollHeroProps> = ({
                 <div className="flex items-center gap-2.5 bg-white/10 hover:bg-white/20 transition-colors backdrop-blur-md px-5 py-2.5 rounded-full border border-white/5">
                   <Mail className="w-5 h-5 text-gray-300" />
                   <span className="text-sm md:text-base font-medium tracking-wide">
-                    amigosemaçãojgs@gmail.com
+                    amigosemacaojgs@gmail.com
                   </span>
                 </div>
 
