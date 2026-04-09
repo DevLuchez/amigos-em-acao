@@ -129,7 +129,7 @@ export default function VisaoGeralGestor() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => {
           const Icon = stat.icon
           return (
@@ -151,56 +151,58 @@ export default function VisaoGeralGestor() {
           <CardTitle className="text-white">Status de Viabilidade dos Eventos</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow className="border-zinc-800">
-                <TableHead className="text-zinc-400">Evento</TableHead>
-                <TableHead className="text-zinc-400">Data Agendada</TableHead>
-                <TableHead className="text-zinc-400 text-center">Inscritos / Mínimo</TableHead>
-                <TableHead className="text-zinc-400 text-center">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {eventosViabilidade.length === 0 ? (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow className="border-zinc-800">
-                  <TableCell colSpan={4} className="text-center text-zinc-400 py-6">
-                    Não há eventos futuros agendados no momento.
-                  </TableCell>
+                  <TableHead className="text-zinc-400">Evento</TableHead>
+                  <TableHead className="text-zinc-400">Data Agendada</TableHead>
+                  <TableHead className="text-zinc-400 text-center">Inscritos / Mínimo</TableHead>
+                  <TableHead className="text-zinc-400 text-center">Status</TableHead>
                 </TableRow>
-              ) : (
-                eventosViabilidade.map((evento) => {
-                  const { date } = formatEventoDateTime(evento.data)
-                  return (
-                    <TableRow key={evento.id} className="border-zinc-800">
-                      <TableCell className="text-white font-medium">{evento.titulo}</TableCell>
-                      <TableCell className="text-zinc-300">{date}</TableCell>
-                      <TableCell className="text-zinc-300 text-center">
-                        {evento.inscritos} / {evento.quantidade_minima}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {evento.status === "viavel" ? (
-                          <span className="inline-flex items-center gap-1 text-green-400">
-                            <CheckCircle2 className="h-4 w-4" />
-                            Viável
-                          </span>
-                        ) : evento.status === "lotado" ? (
-                          <span className="inline-flex items-center gap-1 text-blue-400">
-                            <CheckCircle2 className="h-4 w-4" />
-                            Lotado
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-orange-400">
-                            <AlertTriangle className="h-4 w-4" />
-                            Inviável
-                          </span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  )
-                })
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {eventosViabilidade.length === 0 ? (
+                  <TableRow className="border-zinc-800">
+                    <TableCell colSpan={4} className="text-center text-zinc-400 py-6">
+                      Não há eventos futuros agendados no momento.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  eventosViabilidade.map((evento) => {
+                    const { date } = formatEventoDateTime(evento.data)
+                    return (
+                      <TableRow key={evento.id} className="border-zinc-800">
+                        <TableCell className="text-white font-medium">{evento.titulo}</TableCell>
+                        <TableCell className="text-zinc-300">{date}</TableCell>
+                        <TableCell className="text-zinc-300 text-center">
+                          {evento.inscritos} / {evento.quantidade_minima}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {evento.status === "viavel" ? (
+                            <span className="inline-flex items-center gap-1 text-green-400">
+                              <CheckCircle2 className="h-4 w-4" />
+                              Viável
+                            </span>
+                          ) : evento.status === "lotado" ? (
+                            <span className="inline-flex items-center gap-1 text-blue-400">
+                              <CheckCircle2 className="h-4 w-4" />
+                              Lotado
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-orange-400">
+                              <AlertTriangle className="h-4 w-4" />
+                              Inviável
+                            </span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

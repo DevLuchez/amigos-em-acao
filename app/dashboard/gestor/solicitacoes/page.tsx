@@ -40,7 +40,7 @@ export default async function SolicitacoesGestorPage() {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen bg-black text-white">
+      <div className="flex min-h-screen bg-black text-white overflow-x-hidden">
         <DashboardSidebar userType="gestor" userName={profile?.nome || "Gestor"} />
 
         <DashboardLayoutWrapper>

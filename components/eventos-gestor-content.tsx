@@ -33,10 +33,11 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Plus, Trash2, Calendar, Edit, Eye, MoreVertical, Copy, X, CheckSquare, Search } from "lucide-react"
+import { Plus, Trash2, Calendar, Edit, Eye, MoreVertical, Copy, X, CheckSquare, Search, ImagePlus } from "lucide-react"
 import { getStatusEvento, formatEventoDateTime } from "@/lib/utils/evento-utils"
 import { stringContains } from "@/lib/utils/string-utils"
 import { notifyVolunteersAboutEvent } from "@/app/actions/notify-volunteers"
+import FotosEventoDialog from "./fotos-evento-dialog"
 type Evento = {
   id: string
   titulo: string
@@ -77,6 +78,9 @@ export default function EventosGestorContent() {
   const [deleteMultipleDialogOpen, setDeleteMultipleDialogOpen] = useState(false)
 
   const [searchTerm, setSearchTerm] = useState("")
+
+  const [fotosDialogOpen, setFotosDialogOpen] = useState(false)
+  const [eventoForFotos, setEventoForFotos] = useState<{ id: string; titulo: string } | null>(null)
 
   const [quantidadeMinima, setQuantidadeMinima] = useState<string>("")
   const [quantidadeMaxima, setQuantidadeMaxima] = useState<string>("")
@@ -1072,6 +1076,19 @@ export default function EventosGestorContent() {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog de fotos */}
+      {eventoForFotos && (
+        <FotosEventoDialog
+          eventoId={eventoForFotos.id}
+          eventoTitulo={eventoForFotos.titulo}
+          open={fotosDialogOpen}
+          onOpenChange={(open) => {
+            setFotosDialogOpen(open)
+            if (!open) setEventoForFotos(null)
+          }}
+        />
+      )}
+
       {/* Tabs de eventos */}
       <Tabs value={activeTab} className="w-full">
         <TabsContent value="todos" className="mt-0">
@@ -1082,7 +1099,7 @@ export default function EventosGestorContent() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {todosEventos.map((evento) => {
                 const { date, time } = formatEventoDateTime(evento.data)
                 const descricaoCurta = evento.descricao.length > 100
@@ -1118,6 +1135,18 @@ export default function EventosGestorContent() {
                               <Edit className="h-4 w-4 mr-2" />
                               Editar
                             </DropdownMenuItem>
+                            {status === "realizado" && (
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setEventoForFotos({ id: evento.id, titulo: evento.titulo })
+                                  setFotosDialogOpen(true)
+                                }}
+                                className="text-white hover:bg-zinc-700 cursor-pointer"
+                              >
+                                <ImagePlus className="h-4 w-4 mr-2" />
+                                Fotos
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={() => openDuplicateDialog(evento)}
                               className="text-white hover:bg-zinc-700 cursor-pointer"
@@ -1206,7 +1235,7 @@ export default function EventosGestorContent() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {eventosAgendados.map((evento) => {
                 const { date, time } = formatEventoDateTime(evento.data)
                 const descricaoCurta = evento.descricao.length > 100
@@ -1317,7 +1346,7 @@ export default function EventosGestorContent() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {eventosRealizados.map((evento) => {
                 const { date, time } = formatEventoDateTime(evento.data)
                 const descricaoCurta = evento.descricao.length > 100
@@ -1351,6 +1380,16 @@ export default function EventosGestorContent() {
                             >
                               <Edit className="h-4 w-4 mr-2" />
                               Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setEventoForFotos({ id: evento.id, titulo: evento.titulo })
+                                setFotosDialogOpen(true)
+                              }}
+                              className="text-white hover:bg-zinc-700 cursor-pointer"
+                            >
+                              <ImagePlus className="h-4 w-4 mr-2" />
+                              Fotos
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => openDuplicateDialog(evento)}

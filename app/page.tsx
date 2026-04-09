@@ -4,6 +4,7 @@ import HeroSection from "../hero-section"
 import JornadaSection from "@/components/jornada-section"
 import NossosPropositos from "@/components/nossos-propositos-section"
 import EventosSection from "@/components/eventos-section"
+import GaleriaSection from "@/components/galeria-section"
 import DepoimentosSection from "@/components/depoimentos-section"
 import ParceirosSection from "@/components/parceiros-section"
 import FeedbackSection from "@/components/feedback-section"
@@ -20,6 +21,8 @@ export default function Page() {
       <NossosPropositos />
 
       <EventosSection />
+
+      <GaleriaSection />
 
       <DepoimentosSection />
 

@@ -32,7 +32,7 @@ export default function BeneficiadosGestor() {
     <div className="space-y-4">
       <h2 className="text-2xl font-bold">Pessoas Beneficiadas</h2>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {beneficiados.map((beneficiado) => (
           <Card key={beneficiado.id} className="bg-zinc-900 border-zinc-800">
             <CardHeader>

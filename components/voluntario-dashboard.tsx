@@ -54,25 +54,43 @@ export default function VoluntarioDashboard({ userId }: { userId: string }) {
   const [authUserId, setAuthUserId] = useState<string | null>(null)
 
   useEffect(() => {
-    initializeData()
-  }, [])
-
-  const initializeData = async () => {
     const supabase = createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    
-    if (user) {
-      setAuthUserId(user.id)
-      const { data: profile } = await supabase.from("profiles").select("nome").eq("id", user.id).single()
-      if (profile) {
-        setUserName(profile.nome)
+
+    // onAuthStateChange garante que o token JWT está disponível e válido
+    // antes de fazer qualquer query que dependa do RLS (como participacoes_eventos).
+    // Isso elimina a race condition que fazia eventos confirmados aparecerem
+    // na aba "Próximos Eventos" logo após o login.
+    // Filtramos apenas INITIAL_SESSION e SIGNED_IN para evitar re-fetches
+    // desnecessários em TOKEN_REFRESHED ou outros eventos do ciclo de auth.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (
+          (event === "INITIAL_SESSION" || event === "SIGNED_IN") &&
+          session?.user
+        ) {
+          const user = session.user
+          setAuthUserId(user.id)
+
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("nome")
+            .eq("id", user.id)
+            .single()
+
+          if (profile) {
+            setUserName(profile.nome)
+          }
+
+          await loadEventosWithUserId(user.id)
+        }
       }
-      // Carregar eventos após obter o usuário autenticado
-      await loadEventosWithUserId(user.id)
+    )
+
+    return () => {
+      subscription.unsubscribe()
     }
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const loadEventos = async () => {
     if (authUserId) {
@@ -82,18 +100,30 @@ export default function VoluntarioDashboard({ userId }: { userId: string }) {
 
   const loadEventosWithUserId = async (currentUserId: string) => {
     const supabase = createClient()
-    const { data: eventosData } = await supabase.from("eventos").select("*").order("data", { ascending: true })
-    const { data: participacoes } = await supabase
-      .from("participacoes_eventos")
-      .select("evento_id")
-      .eq("voluntario_id", currentUserId)
-    const eventosIds = participacoes?.map((p) => p.evento_id) || []
+
+    // Usa Promise.all para garantir que AMBAS as queries completem antes de calcular
+    // o estado. Isso evita race conditions onde a query de participações pode retornar
+    // vazia se o token JWT ainda estiver sendo validado pela sessão recém-iniciada.
+    const [eventosResult, participacoesResult] = await Promise.all([
+      supabase.from("eventos").select("*").order("data", { ascending: true }),
+      supabase
+        .from("participacoes_eventos")
+        .select("evento_id")
+        .eq("voluntario_id", currentUserId),
+    ])
+
+    const eventosData = eventosResult.data
+    // Set para lookup O(1) em vez de array.includes O(n)
+    const eventosIds = new Set(
+      participacoesResult.data?.map((p) => p.evento_id) ?? []
+    )
+
     if (eventosData) {
       const eventosFuturos = eventosData.filter((e) => getStatusEvento(e.data) === "proximo")
       const eventosComParticipacao = eventosFuturos.map((evento) => ({
         ...evento,
         voluntarios_inscritos: evento.quantidade_inscritos,
-        participando: eventosIds.includes(evento.id),
+        participando: eventosIds.has(evento.id),
       }))
       setEventos(eventosComParticipacao.filter((e) => !e.participando))
       setMeusEventos(eventosComParticipacao.filter((e) => e.participando))
@@ -247,7 +277,7 @@ export default function VoluntarioDashboard({ userId }: { userId: string }) {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {eventos.map((evento) => {
                   const { date, time } = formatEventoDateTime(evento.data)
                   const descricaoCurta = evento.descricao.length > 100
@@ -327,7 +357,7 @@ export default function VoluntarioDashboard({ userId }: { userId: string }) {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {meusEventos.map((evento) => {
                   const { date, time } = formatEventoDateTime(evento.data)
                   const descricaoCurta = evento.descricao.length > 100

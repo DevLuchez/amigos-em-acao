@@ -56,7 +56,7 @@ export default async function GestorPage() {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen bg-black text-white">
+      <div className="flex min-h-screen bg-black text-white overflow-x-hidden">
         <DashboardSidebar userType="gestor" userName={profile?.nome || "Gestor"} />
 
         <DashboardLayoutWrapper>

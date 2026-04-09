@@ -137,7 +137,7 @@ export default function FeedbacksGestor() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-zinc-400">Total de Feedbacks</h3>
@@ -185,9 +185,10 @@ export default function FeedbacksGestor() {
         </div>
       </div>
 
-      <div className="border border-zinc-800 rounded-lg overflow-hidden bg-zinc-900">
-        <div className="bg-zinc-800 border-b border-zinc-700">
-          <div className="grid grid-cols-[50px_120px_200px_120px_1fr_150px_80px] gap-4 px-4 py-3 text-sm font-medium text-zinc-300">
+      <div className="border border-zinc-800 rounded-lg overflow-x-auto overflow-y-hidden bg-zinc-900">
+        <div className="min-w-[900px]">
+          <div className="bg-zinc-800 border-b border-zinc-700">
+            <div className="grid grid-cols-[50px_120px_200px_120px_1fr_150px_80px] gap-4 px-4 py-3 text-sm font-medium text-zinc-300">
             <div className="flex items-center">
               <Checkbox
                 checked={selectedIds.length === feedbacks.length && feedbacks.length > 0}
@@ -265,6 +266,7 @@ export default function FeedbacksGestor() {
               )
             })
           )}
+        </div>
         </div>
       </div>
 

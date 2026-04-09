@@ -50,12 +50,20 @@ export default function DashboardSidebar({ userType, userName }: SidebarProps) {
   const links = userType === "gestor" ? gestorLinks : voluntarioLinks
 
   return (
-    <div
-      className={cn(
-        "fixed left-0 top-0 flex h-screen flex-col border-r border-zinc-800 bg-zinc-900 transition-all duration-300 z-50",
-        isExpanded ? "w-64" : "w-20",
+    <>
+      {/* Mobile Backdrop */}
+      {isExpanded && (
+        <div 
+          className="fixed inset-0 bg-black/80 z-40 md:hidden"
+          onClick={() => setIsExpanded(false)}
+        />
       )}
-    >
+      <div
+        className={cn(
+          "fixed left-0 top-0 flex h-screen flex-col border-r border-zinc-800 bg-zinc-900 transition-all duration-300 z-50",
+          isExpanded ? "w-64 translate-x-0" : "w-64 -translate-x-full md:w-20 md:translate-x-0",
+        )}
+      >
       {/* Header */}
       <div className="border-b border-zinc-800 p-6 flex items-center justify-between">
         {isExpanded && (
@@ -135,5 +143,6 @@ export default function DashboardSidebar({ userType, userName }: SidebarProps) {
         </Button>
       </div>
     </div>
+    </>
   )
 }

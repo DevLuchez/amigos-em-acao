@@ -149,10 +149,11 @@ export default function VoluntariosGestor() {
         </div>
       </div>
 
-      {/* Tabela com scroll */}
-      <div className="border border-zinc-800 rounded-lg overflow-hidden bg-zinc-900">
-        {/* Cabeçalho da tabela - fixo */}
-        <div className="bg-zinc-800 border-b border-zinc-700">
+      {/* Tabela com scroll responsivo */}
+      <div className="border border-zinc-800 rounded-lg overflow-x-auto overflow-y-hidden bg-zinc-900">
+        <div className="min-w-[700px]">
+          {/* Cabeçalho da tabela - fixo */}
+          <div className="bg-zinc-800 border-b border-zinc-700">
           <div className="grid grid-cols-[50px_1fr_1fr_1fr_80px] gap-4 px-4 py-3 text-sm font-medium text-zinc-300">
             <div className="flex items-center">
               <Checkbox
@@ -207,6 +208,7 @@ export default function VoluntariosGestor() {
               </div>
             ))
           )}
+        </div>
         </div>
       </div>
 
