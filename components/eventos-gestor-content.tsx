@@ -523,7 +523,7 @@ export default function EventosGestorContent() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 bg-zinc-900">
+          <TabsList className="grid w-full grid-cols-3 bg-zinc-900">
             <TabsTrigger value="todos" className="data-[state=active]:bg-white data-[state=active]:text-black">
               Todos os Eventos ({todosEventos.length})
             </TabsTrigger>
