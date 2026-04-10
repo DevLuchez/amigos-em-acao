@@ -20,6 +20,4 @@ export default async function VoluntarioPage() {
   }
 
   redirect("/dashboard/voluntario/solicitacoes")
-
-  // Removed code morto after redirect that caused error "Failed to fetch"
 }

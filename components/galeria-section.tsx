@@ -3,21 +3,31 @@
 import { useEffect, useState, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { motion, AnimatePresence } from "framer-motion"
-import { Camera, X, ChevronLeft, ChevronRight } from "lucide-react"
+import { Camera, X, ChevronLeft, ChevronRight, Calendar } from "lucide-react"
 import { getStatusEvento, formatEventoDateTime } from "@/lib/utils/evento-utils"
 
-type FotoComEvento = {
+type Foto = {
   id: string
   url: string
-  evento_titulo: string
-  evento_data: string
+}
+
+type EventoComFotos = {
+  id: string
+  titulo: string
+  data: string
+  fotos: Foto[]
 }
 
 export default function GaleriaSection() {
-  const [fotos, setFotos] = useState<FotoComEvento[]>([])
+  const [eventos, setEventos] = useState<EventoComFotos[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [isMounted, setIsMounted] = useState(false)
+
+  // Lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxFotos, setLightboxFotos] = useState<Foto[]>([])
+  const [lightboxIndex, setLightboxIndex] = useState(0)
+  const [lightboxTitulo, setLightboxTitulo] = useState("")
 
   useEffect(() => {
     loadFotos()
@@ -27,29 +37,25 @@ export default function GaleriaSection() {
   const loadFotos = async () => {
     const supabase = createClient()
 
-    // Buscar eventos públicos realizados, ordenados por data mais recente
-    const { data: eventos } = await supabase
+    const { data: eventosData } = await supabase
       .from("eventos")
       .select("id, titulo, data")
       .eq("publico", true)
       .order("data", { ascending: false })
 
-    if (!eventos) {
+    if (!eventosData) {
       setIsLoading(false)
       return
     }
 
-    // Filtrar apenas eventos já realizados
-    const eventosRealizados = eventos.filter(
+    const eventosRealizados = eventosData.filter(
       (e) => getStatusEvento(e.data) === "realizado"
     )
 
-    // Buscar fotos dos 3 eventos realizados mais recentes que tenham fotos
-    const todasFotos: FotoComEvento[] = []
-    let eventosComFotos = 0
+    const eventosComFotos: EventoComFotos[] = []
 
     for (const evento of eventosRealizados) {
-      if (eventosComFotos >= 3) break
+      if (eventosComFotos.length >= 3) break
 
       const { data: fotosEvento } = await supabase
         .from("evento_fotos")
@@ -58,51 +64,52 @@ export default function GaleriaSection() {
         .order("created_at", { ascending: true })
 
       if (fotosEvento && fotosEvento.length > 0) {
-        eventosComFotos++
-        fotosEvento.forEach((foto) => {
-          todasFotos.push({
-            id: foto.id,
-            url: foto.url,
-            evento_titulo: evento.titulo,
-            evento_data: evento.data,
-          })
+        eventosComFotos.push({
+          id: evento.id,
+          titulo: evento.titulo,
+          data: evento.data,
+          fotos: fotosEvento,
         })
       }
     }
 
-    setFotos(todasFotos)
+    setEventos(eventosComFotos)
     setIsLoading(false)
   }
 
-  const openLightbox = (index: number) => setLightboxIndex(index)
-  const closeLightbox = useCallback(() => setLightboxIndex(null), [])
+  const openLightbox = (evento: EventoComFotos, fotoIndex: number) => {
+    setLightboxFotos(evento.fotos)
+    setLightboxIndex(fotoIndex)
+    setLightboxTitulo(evento.titulo)
+    setLightboxOpen(true)
+  }
+
+  const closeLightbox = useCallback(() => setLightboxOpen(false), [])
 
   const prevPhoto = useCallback(() => {
     setLightboxIndex((prev) =>
-      prev !== null ? (prev === 0 ? fotos.length - 1 : prev - 1) : null
+      prev === 0 ? lightboxFotos.length - 1 : prev - 1
     )
-  }, [fotos.length])
+  }, [lightboxFotos.length])
 
   const nextPhoto = useCallback(() => {
     setLightboxIndex((prev) =>
-      prev !== null ? (prev === fotos.length - 1 ? 0 : prev + 1) : null
+      prev === lightboxFotos.length - 1 ? 0 : prev + 1
     )
-  }, [fotos.length])
+  }, [lightboxFotos.length])
 
-  // Navegação por teclado
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (lightboxIndex === null) return
+      if (!lightboxOpen) return
       if (e.key === "Escape") closeLightbox()
       if (e.key === "ArrowLeft") prevPhoto()
       if (e.key === "ArrowRight") nextPhoto()
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [lightboxIndex, closeLightbox, prevPhoto, nextPhoto])
+  }, [lightboxOpen, closeLightbox, prevPhoto, nextPhoto])
 
-  // Não renderizar a seção se não houver fotos
-  if (isLoading || fotos.length === 0) return null
+  if (isLoading || eventos.length === 0) return null
 
   return (
     <>
@@ -127,39 +134,68 @@ export default function GaleriaSection() {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-            {fotos.map((foto, index) => {
-              const { date } = formatEventoDateTime(foto.evento_data)
+          <div className="space-y-12">
+            {eventos.map((evento, eventoIndex) => {
+              const { date, time } = formatEventoDateTime(evento.data)
               return (
                 <motion.div
-                  key={foto.id}
-                  initial={isMounted ? { opacity: 0, scale: 0.9 } : false}
-                  whileInView={{ opacity: 1, scale: 1 }}
+                  key={evento.id}
+                  initial={isMounted ? { opacity: 0, y: 30 } : false}
+                  whileInView={{ opacity: 1, y: 0 }}
                   transition={{
-                    duration: 0.5,
-                    delay: index * 0.04,
+                    duration: 0.6,
+                    delay: eventoIndex * 0.15,
                     ease: [0.16, 1, 0.3, 1],
                   }}
                   viewport={{ once: true }}
-                  whileHover={{ scale: 1.03 }}
-                  onClick={() => openLightbox(index)}
-                  className="relative cursor-pointer overflow-hidden rounded-xl group aspect-square"
+                  className="bg-white border-2 border-gray-200 hover:border-gray-900 transition-colors overflow-hidden"
+                  style={{
+                    clipPath:
+                      "polygon(30px 0%, calc(100% - 30px) 0%, 100% 30px, 100% 100%, calc(100% - 30px) 100%, 30px 100%, 0 100%, 0 0)",
+                    boxShadow: "4px 4px 0px hsl(var(--border))",
+                  }}
                 >
-                  <img
-                    src={foto.url}
-                    alt={`Foto de ${foto.evento_titulo}`}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4">
-                      <p className="text-white text-sm md:text-base font-bold truncate">
-                        {foto.evento_titulo}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Camera className="w-3 h-3 text-white/70" />
-                        <span className="text-white/70 text-xs">{date}</span>
+                  {/* Header do evento */}
+                  <div className="p-6 md:p-8 border-b border-gray-100">
+                    <div className="flex items-center gap-4">
+                      <div className="bg-gray-900 text-white p-3">
+                        <Camera className="w-6 h-6" />
                       </div>
+                      <div>
+                        <h3 className="text-xl font-black text-gray-900 tracking-wider">
+                          {evento.titulo}
+                        </h3>
+                        <div className="flex items-center text-sm text-gray-500 mt-1">
+                          <Calendar className="w-4 h-4 mr-2" />
+                          <span>{date} às {time}</span>
+                          <span className="mx-2">•</span>
+                          <span>{evento.fotos.length} foto{evento.fotos.length !== 1 ? "s" : ""}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Grid de fotos */}
+                  <div className="p-4 md:p-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                      {evento.fotos.map((foto, fotoIndex) => (
+                        <motion.div
+                          key={foto.id}
+                          whileHover={{ scale: 1.03 }}
+                          onClick={() => openLightbox(evento, fotoIndex)}
+                          className="relative cursor-pointer overflow-hidden rounded-lg group aspect-square"
+                        >
+                          <img
+                            src={foto.url}
+                            alt={`Foto de ${evento.titulo}`}
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            loading="lazy"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
+                            <Camera className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          </div>
+                        </motion.div>
+                      ))}
                     </div>
                   </div>
                 </motion.div>
@@ -171,7 +207,7 @@ export default function GaleriaSection() {
 
       {/* Lightbox */}
       <AnimatePresence>
-        {lightboxIndex !== null && (
+        {lightboxOpen && lightboxFotos.length > 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -180,28 +216,27 @@ export default function GaleriaSection() {
             className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center"
             onClick={closeLightbox}
           >
-            {/* Botão fechar */}
             <button
               onClick={closeLightbox}
               className="absolute top-4 right-4 z-10 text-white/70 hover:text-white transition-colors p-2"
+              aria-label="Fechar galeria"
             >
               <X className="w-8 h-8" />
             </button>
 
-            {/* Seta esquerda */}
-            {fotos.length > 1 && (
+            {lightboxFotos.length > 1 && (
               <button
                 onClick={(e) => {
                   e.stopPropagation()
                   prevPhoto()
                 }}
                 className="absolute left-2 md:left-6 top-1/2 -translate-y-1/2 z-10 text-white/50 hover:text-white transition-colors p-2 rounded-full bg-white/5 hover:bg-white/10"
+                aria-label="Foto anterior"
               >
                 <ChevronLeft className="w-8 h-8" />
               </button>
             )}
 
-            {/* Foto */}
             <motion.div
               key={lightboxIndex}
               initial={{ opacity: 0, scale: 0.95 }}
@@ -212,29 +247,28 @@ export default function GaleriaSection() {
               onClick={(e) => e.stopPropagation()}
             >
               <img
-                src={fotos[lightboxIndex].url}
-                alt={`Foto de ${fotos[lightboxIndex].evento_titulo}`}
+                src={lightboxFotos[lightboxIndex].url}
+                alt={`Foto de ${lightboxTitulo}`}
                 className="max-w-full max-h-[78vh] object-contain rounded-lg"
               />
               <div className="text-center mt-4">
                 <p className="text-white font-bold text-lg">
-                  {fotos[lightboxIndex].evento_titulo}
+                  {lightboxTitulo}
                 </p>
                 <p className="text-white/50 text-sm mt-1">
-                  {formatEventoDateTime(fotos[lightboxIndex].evento_data).date} •{" "}
-                  {lightboxIndex + 1} / {fotos.length}
+                  {lightboxIndex + 1} / {lightboxFotos.length}
                 </p>
               </div>
             </motion.div>
 
-            {/* Seta direita */}
-            {fotos.length > 1 && (
+            {lightboxFotos.length > 1 && (
               <button
                 onClick={(e) => {
                   e.stopPropagation()
                   nextPhoto()
                 }}
                 className="absolute right-2 md:right-6 top-1/2 -translate-y-1/2 z-10 text-white/50 hover:text-white transition-colors p-2 rounded-full bg-white/5 hover:bg-white/10"
+                aria-label="Próxima foto"
               >
                 <ChevronRight className="w-8 h-8" />
               </button>

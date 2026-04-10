@@ -19,38 +19,22 @@ function LoadingState() {
 }
 
 export default async function GestorPage() {
-  console.log("[v0] Dashboard Gestor - Iniciando verificação de autenticação")
-
   const supabase = await createClient()
-  console.log("[v0] Dashboard Gestor - Cliente Supabase criado")
 
   const {
     data: { user },
     error,
   } = await supabase.auth.getUser()
 
-  console.log("[v0] Dashboard Gestor - Resultado getUser:", {
-    hasUser: !!user,
-    userId: user?.id,
-    userEmail: user?.email,
-    userMetadata: user?.user_metadata,
-    error: error?.message,
-  })
-
   if (error || !user) {
-    console.log("[v0] Dashboard Gestor - Sem usuário ou erro, redirecionando para login")
     redirect("/auth/login")
   }
 
   const tipo = user.user_metadata?.tipo
-  console.log("[v0] Dashboard Gestor - Tipo de usuário:", tipo)
 
   if (tipo !== "gestor") {
-    console.log("[v0] Dashboard Gestor - Tipo não é gestor, redirecionando para voluntário")
     redirect("/dashboard/voluntario")
   }
-
-  console.log("[v0] Dashboard Gestor - Autenticação OK, carregando dashboard")
 
   const { data: profile } = await supabase.from("profiles").select("nome").eq("id", user.id).single()
 

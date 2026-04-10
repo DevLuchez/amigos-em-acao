@@ -69,6 +69,7 @@ export default function HeroSection() {
             <button
               key={item.name}
               onClick={() => scrollToSection(item.href)}
+              aria-label={`Navegar para ${item.name}`}
               className="relative text-white hover:text-white transition-colors duration-300 font-medium tracking-wide pb-1 group"
             >
               {item.name}
@@ -77,6 +78,7 @@ export default function HeroSection() {
           ))}
           <Link
             href="/auth/cadastro"
+            aria-label="Cadastre-se na plataforma"
             className="border-2 border-white text-white px-6 py-2 rounded-full font-semibold tracking-wide hover:bg-white hover:text-black transition-all duration-300"
           >
             Cadastre-se
@@ -107,6 +109,7 @@ export default function HeroSection() {
               <button
                 key={item.name}
                 onClick={() => scrollToSection(item.href)}
+                aria-label={`Navegar para ${item.name}`}
                 className="text-white text-2xl font-bold tracking-wider hover:text-gray-300 transition-colors duration-300"
               >
                 {item.name}
@@ -152,7 +155,7 @@ export default function HeroSection() {
             </h1>
 
             <p className="text-xl md:text-2xl font-light tracking-wide mb-8 text-gray-200 drop-shadow-md">
-              <span className="font-bold">Sua doação</span> em movimento, <span className="font-bold">Nossa ação</span> em transformação
+              <span className="font-bold">Sua doação</span> em movimento, <span className="font-bold">nossa ação</span> em transformação
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center relative z-20">

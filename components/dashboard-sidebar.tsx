@@ -31,6 +31,7 @@ export default function DashboardSidebar({ userType, userName }: SidebarProps) {
   const handleLogout = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
+    router.refresh()
     router.push("/")
   }
 
@@ -38,7 +39,7 @@ export default function DashboardSidebar({ userType, userName }: SidebarProps) {
     { href: "/dashboard/gestor", label: "Visão Geral", icon: LayoutDashboard },
     { href: "/dashboard/gestor/solicitacoes", label: "Solicitações", icon: HandHeart },
     { href: "/dashboard/gestor/eventos", label: "Eventos", icon: Calendar },
-    { href: "/dashboard/gestor/voluntarios", label: "Voluntários", icon: Users },
+    { href: "/dashboard/gestor/voluntarios", label: "Usuários", icon: Users },
     { href: "/dashboard/gestor/feedbacks", label: "Feedbacks", icon: MessageSquare },
   ]
 

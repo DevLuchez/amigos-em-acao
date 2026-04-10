@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion"
 import { useState, useEffect } from "react"
-import Image from "next/image"
 
 export default function ParceirosSection() {
   const [isMounted, setIsMounted] = useState(false)
@@ -76,7 +75,7 @@ export default function ParceirosSection() {
               href={parceiro.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center justify-center w-full h-32"
+              className="flex items-center justify-center w-full h-24 sm:h-32"
             >
               <motion.div
                 className="flex items-center justify-center w-full h-full p-4 relative"
@@ -86,16 +85,13 @@ export default function ParceirosSection() {
                 transition={{ duration: 0.5, delay: 0, ease: [0.16, 1, 0.3, 1] }}
                 viewport={{ once: true }}
               >
-                <Image
+                <img
                   src={parceiro.logo || "/placeholder.svg"}
                   alt={`Logo ${parceiro.name}`}
                   width={200}
                   height={100}
                   className="max-w-full max-h-full object-contain"
-                  onError={(e) => {
-                    console.log("[v0] Erro ao carregar imagem:", parceiro.logo)
-                    e.currentTarget.src = "/placeholder.svg?height=100&width=200"
-                  }}
+                  loading="lazy"
                 />
               </motion.div>
             </a>

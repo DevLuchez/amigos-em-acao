@@ -45,7 +45,7 @@ export default async function VoluntarioEventosPage() {
 
         <DashboardLayoutWrapper>
           <Suspense fallback={<LoadingState />}>
-            <VoluntarioDashboard />
+            <VoluntarioDashboard userId={user.id} />
           </Suspense>
         </DashboardLayoutWrapper>
       </div>

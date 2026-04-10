@@ -21,12 +21,16 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { CheckCircle, XCircle, Loader2, Clock, User, MapPin } from 'lucide-react'
 import { useEffect, useState } from "react"
+import { notifyVoluntariosSolicitacaoAprovada } from "@/app/actions/notify-solicitacoes"
 
 type Beneficiado = {
   id: string
   nome: string
   email: string
-  cep: string
+  telefone: string | null
+  endereco: string | null
+  bairro: string | null
+  cidade: string | null
   necessidade: string
   descricao: string
 }
@@ -68,7 +72,7 @@ export default function KanbanSolicitacoesGestor() {
       .select(
         `
         *,
-        beneficiado:beneficiados(id, nome, email, cep, necessidade, descricao),
+        beneficiado:beneficiados(id, nome, email, telefone, endereco, bairro, cidade, necessidade, descricao),
         voluntario:profiles!solicitacoes_ajuda_voluntario_id_fkey(nome)
       `,
       )
@@ -95,6 +99,13 @@ export default function KanbanSolicitacoesGestor() {
         description: "A solicitação foi aprovada e está disponível para voluntários.",
         duration: 3000,
       })
+
+      // Notificar voluntários (fire-and-forget)
+      notifyVoluntariosSolicitacaoAprovada(
+        selectedSolicitacao.beneficiado.nome,
+        selectedSolicitacao.beneficiado.necessidade
+      ).catch(() => {})
+
       loadSolicitacoes()
       setAprovarDialogOpen(false)
       setDetailsDialogOpen(false)
@@ -227,7 +238,7 @@ export default function KanbanSolicitacoesGestor() {
             <h4 className="font-semibold text-white text-lg mb-1">{solicitacao.beneficiado.nome}</h4>
             <div className="flex items-center gap-2 text-sm text-zinc-400">
               <MapPin className="h-3.5 w-3.5" />
-              <span>CEP: {solicitacao.beneficiado.cep}</span>
+              <span>{[solicitacao.beneficiado.bairro, solicitacao.beneficiado.cidade].filter(Boolean).join(", ") || "Endereço não informado"}</span>
             </div>
           </div>
           <Badge variant={getPrioridadeColor(solicitacao.prioridade) as any} className="shrink-0">
@@ -305,38 +316,40 @@ export default function KanbanSolicitacoesGestor() {
       </div>
 
       <Tabs defaultValue="novas" className="w-full">
-        <TabsList className="bg-zinc-900 border border-zinc-800 p-1 h-auto flex-wrap">
-          <TabsTrigger value="novas" className="data-[state=active]:text-white-500 gap-2">
-            Novas Solicitações
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+          <TabsList className="bg-zinc-900 border border-zinc-800 p-1 h-auto inline-flex w-auto min-w-full md:flex md:flex-wrap">
+          <TabsTrigger value="novas" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+            Novas
             <Badge variant="secondary" className="bg-blue-500/20 text-blue-400 ml-1">
               {novas.length}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="aprovadas" className="data-[state=active]:data-[state=active]:text-white-500 gap-2">
-            Buscando Responsável
+          <TabsTrigger value="aprovadas" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+            Buscando
             <Badge variant="secondary" className="bg-orange-500/20 text-orange-400 ml-1">
               {aprovadas.length}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="andamento" className="data-[state=active]:data-[state=active]:text-white-500 gap-2">
-            Visita Agendada
+          <TabsTrigger value="andamento" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+            Agendada
             <Badge variant="secondary" className="bg-purple-500/20 text-purple-400 ml-1">
               {emAndamento.length}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="concluidas" className="data-[state=active]:data-[state=active]:text-white-500 gap-2">
+          <TabsTrigger value="concluidas" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
             Concluído
             <Badge variant="secondary" className="bg-green-500/20 text-green-400 ml-1">
               {concluidas.length}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="reprovadas" className="data-[state=active]:data-[state=active]:text-white-500 gap-2">
+          <TabsTrigger value="reprovadas" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
             Reprovadas
             <Badge variant="secondary" className="bg-red-500/20 text-red-400 ml-1">
               {reprovadas.length}
             </Badge>
           </TabsTrigger>
         </TabsList>
+        </div>
 
         {/* Aba: Novas Solicitações */}
         <TabsContent value="novas" className="mt-6">
@@ -426,7 +439,7 @@ export default function KanbanSolicitacoesGestor() {
 
       {/* Dialog de Detalhes */}
       <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white">Detalhes da Solicitação</DialogTitle>
             <DialogDescription className="text-zinc-400">
@@ -446,8 +459,9 @@ export default function KanbanSolicitacoesGestor() {
                 <h4 className="text-sm font-medium text-zinc-400">Beneficiado</h4>
                 <div className="bg-zinc-800 p-4 rounded-lg border border-zinc-700 space-y-1">
                   <p className="text-white font-medium">{selectedSolicitacao.beneficiado.nome}</p>
-                  <p className="text-sm text-zinc-400">{selectedSolicitacao.beneficiado.email}</p>
-                  <p className="text-sm text-zinc-400">CEP: {selectedSolicitacao.beneficiado.cep}</p>
+                  {selectedSolicitacao.beneficiado.email && <p className="text-sm text-zinc-400">{selectedSolicitacao.beneficiado.email}</p>}
+                  {selectedSolicitacao.beneficiado.telefone && <p className="text-sm text-zinc-400">Tel: {selectedSolicitacao.beneficiado.telefone}</p>}
+                  <p className="text-sm text-zinc-400">{[selectedSolicitacao.beneficiado.endereco, selectedSolicitacao.beneficiado.bairro, selectedSolicitacao.beneficiado.cidade].filter(Boolean).join(", ")}</p>
                 </div>
               </div>
 
@@ -470,7 +484,18 @@ export default function KanbanSolicitacoesGestor() {
                 </div>
               )}
 
-              {selectedSolicitacao.data_agendada && (
+              {selectedSolicitacao.status === "concluida" ? (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-zinc-400">Data de Conclusão</h4>
+                  <p className="text-white">
+                    {new Date(selectedSolicitacao.updated_at).toLocaleDateString("pt-BR")} às{" "}
+                    {new Date(selectedSolicitacao.updated_at).toLocaleTimeString("pt-BR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+              ) : selectedSolicitacao.data_agendada ? (
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium text-zinc-400">Data Agendada</h4>
                   <p className="text-white">
@@ -481,7 +506,7 @@ export default function KanbanSolicitacoesGestor() {
                     })}
                   </p>
                 </div>
-              )}
+              ) : null}
 
               {selectedSolicitacao.justificativa_reprovacao && (
                 <div className="space-y-2">

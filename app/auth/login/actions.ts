@@ -33,17 +33,11 @@ export async function loginAction(email: string, password: string) {
     .eq("id", data.user.id)
     .single()
 
-  console.log("[v0] Login bem-sucedido, user_id:", data.user.id)
-  console.log("[v0] Profile encontrado:", profile)
-  console.log("[v0] Erro ao buscar profile:", profileError)
-
   if (profileError || !profile) {
     return { error: "Erro ao buscar perfil do usuário" }
   }
 
   const tipoUsuario = profile.tipo
-
-  console.log("[v0] Tipo de usuário:", tipoUsuario)
 
   // Redirecionar baseado no tipo de usuário
   if (tipoUsuario === "gestor") {

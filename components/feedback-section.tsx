@@ -57,7 +57,6 @@ export default function FeedbackSection() {
       const { error: insertError } = await supabase.from("feedbacks").insert(feedbackData)
 
       if (insertError) {
-        console.error("[v0] Erro ao salvar feedback:", insertError)
         setError("Erro ao enviar feedback. Tente novamente.")
         setIsSubmitting(false)
         return
@@ -72,8 +71,7 @@ export default function FeedbackSection() {
       setEmail("")
       setAnonimo(true)
       setTimeout(() => setSubmitted(false), 3000)
-    } catch (err) {
-      console.error("[v0] Erro ao enviar feedback:", err)
+    } catch {
       setError("Erro ao enviar feedback. Tente novamente.")
     } finally {
       setIsSubmitting(false)

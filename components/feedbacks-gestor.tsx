@@ -48,7 +48,13 @@ export default function FeedbacksGestor() {
   const loadFeedbacks = async () => {
     setLoading(true)
     const supabase = createClient()
-    const { data } = await supabase.from("feedbacks").select("*").order("created_at", { ascending: false })
+    const { data, error } = await supabase.from("feedbacks").select("*").order("created_at", { ascending: false })
+
+    if (error) {
+      alert(`Erro ao carregar feedbacks: ${error.message}`)
+      setLoading(false)
+      return
+    }
 
     if (data) {
       setFeedbacks(data)
@@ -61,7 +67,11 @@ export default function FeedbacksGestor() {
 
   const handleDelete = async (id: string) => {
     const supabase = createClient()
-    await supabase.from("feedbacks").delete().eq("id", id)
+    const { error } = await supabase.from("feedbacks").delete().eq("id", id)
+    if (error) {
+      alert(`Erro ao excluir feedback: ${error.message}`)
+      return
+    }
     setFeedbacks(feedbacks.filter((f) => f.id !== id))
     setDeleteDialogOpen(false)
     setDetailsDialogOpen(false)
@@ -74,7 +84,11 @@ export default function FeedbacksGestor() {
 
   const handleBulkDelete = async () => {
     const supabase = createClient()
-    await supabase.from("feedbacks").delete().in("id", selectedIds)
+    const { error } = await supabase.from("feedbacks").delete().in("id", selectedIds)
+    if (error) {
+      alert(`Erro ao excluir feedbacks: ${error.message}`)
+      return
+    }
     const newFeedbacks = feedbacks.filter((f) => !selectedIds.includes(f.id))
     setFeedbacks(newFeedbacks)
     setSelectedIds([])
@@ -185,8 +199,59 @@ export default function FeedbacksGestor() {
         </div>
       </div>
 
-      <div className="border border-zinc-800 rounded-lg overflow-x-auto overflow-y-hidden bg-zinc-900">
-        <div className="min-w-[900px]">
+      {/* Mobile: cards */}
+      <div className="md:hidden space-y-3">
+        {feedbacks.length === 0 ? (
+          <div className="text-center py-12 text-zinc-400">Nenhum feedback recebido ainda</div>
+        ) : (
+          feedbacks.map((feedback) => {
+            const urgencia = getUrgencia(feedback.estrelas)
+            return (
+              <div
+                key={feedback.id}
+                onClick={() => openDetails(feedback)}
+                className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-3 cursor-pointer hover:bg-zinc-800/50 transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={selectedIds.includes(feedback.id)}
+                      onCheckedChange={() => toggleSelect(feedback.id)}
+                      className="border-zinc-600"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <Badge variant={urgencia.color}>{urgencia.label}</Badge>
+                  </div>
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      onClick={() => { setFeedbackToDelete(feedback.id); setDeleteDialogOpen(true) }}
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-red-500 hover:text-red-400"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-white text-sm font-medium truncate">
+                    {feedback.anonimo ? "Anônimo" : feedback.nome || "Usuário"}
+                  </span>
+                  {renderEstrelas(feedback.estrelas)}
+                </div>
+                <p className="text-zinc-400 text-sm line-clamp-2">{feedback.mensagem}</p>
+                <p className="text-xs text-zinc-500">
+                  {new Date(feedback.created_at).toLocaleDateString("pt-BR")}
+                </p>
+              </div>
+            )
+          })
+        )}
+      </div>
+
+      {/* Desktop: tabela */}
+      <div className="hidden md:block border border-zinc-800 rounded-lg overflow-x-auto overflow-y-hidden bg-zinc-900">
+        <div>
           <div className="bg-zinc-800 border-b border-zinc-700">
             <div className="grid grid-cols-[50px_120px_200px_120px_1fr_150px_80px] gap-4 px-4 py-3 text-sm font-medium text-zinc-300">
             <div className="flex items-center">
@@ -271,7 +336,7 @@ export default function FeedbacksGestor() {
       </div>
 
       <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl max-h-[600px] overflow-y-auto">
+        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white">Detalhes do Feedback</DialogTitle>
             <DialogDescription className="text-zinc-400">Visualize todos os detalhes do feedback</DialogDescription>

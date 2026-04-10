@@ -23,12 +23,10 @@ export async function notifyVolunteersAboutEvent(
     const { data: perfis, error } = await supabaseAdmin.from("profiles").select("email")
 
     if (error) {
-      console.error("[notifyVolunteers] Erro ao buscar usuários: ", error)
       return { success: false, error: error.message }
     }
 
     if (!perfis || perfis.length === 0) {
-      console.log("[notifyVolunteers] Nenhum usuário ativo encontrado para notificar.")
       return { success: true }
     }
 
@@ -107,7 +105,6 @@ export async function notifyVolunteersAboutEvent(
     `
 
     // 5. Dispara o E-mail
-    console.log('[notifyVolunteers] Disparando e-mail para', emails.length, 'voluntários com ação:', tipoAcao)
     await sendEmail({
       to: process.env.EMAIL_USER,
       bcc: emails,
@@ -116,8 +113,8 @@ export async function notifyVolunteersAboutEvent(
     })
 
     return { success: true }
-  } catch (error: any) {
-    console.error("[notifyVolunteers] Erro catastrófico: ", error)
-    return { success: false, error: error.message }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Erro desconhecido ao notificar voluntários"
+    return { success: false, error: message }
   }
 }

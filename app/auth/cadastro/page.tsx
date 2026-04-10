@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -20,7 +19,7 @@ export default function CadastroPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [repeatPassword, setRepeatPassword] = useState("")
-  const [tipo, setTipo] = useState<"voluntario" | "gestor">("voluntario")
+  const tipo = "voluntario" as const
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -53,15 +52,14 @@ export default function CadastroPage() {
       const { data, error } = await supabase.rpc("check_email_exists", { email_to_check: emailToCheck })
 
       if (error) {
-        console.error("[v0] Erro ao verificar email:", error)
         return
       }
 
       if (data === true) {
         setEmailError("Este email já está cadastrado")
       }
-    } catch (error) {
-      console.error("[v0] Erro ao verificar email:", error)
+    } catch {
+      // Erro na verificação de email - ignora silenciosamente
     } finally {
       setIsCheckingEmail(false)
     }
@@ -109,8 +107,6 @@ export default function CadastroPage() {
     setError(null)
 
     try {
-      console.log("[v0] Iniciando cadastro com dados:", { nome, telefone, email, tipo })
-
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -126,7 +122,6 @@ export default function CadastroPage() {
       })
 
       if (authError) {
-        console.error("[v0] Erro no signup do Auth:", authError)
         throw authError
       }
 
@@ -134,9 +129,6 @@ export default function CadastroPage() {
         throw new Error("Usuário não foi criado")
       }
 
-      console.log("[v0] Usuário criado no Auth com sucesso:", authData.user.id)
-
-      console.log("[v0] Criando perfil e registros usando server action...")
       const result = await createUserProfile({
         id: authData.user.id,
         nome,
@@ -149,16 +141,9 @@ export default function CadastroPage() {
         throw new Error(result.error || "Erro ao criar perfil")
       }
 
-      console.log("[v0] Cadastro completo realizado com sucesso")
-
       router.push("/auth/cadastro-sucesso")
     } catch (error: unknown) {
-      console.error("[v0] Erro capturado ao criar conta:", error)
       if (error instanceof Error) {
-        console.error("[v0] Detalhes do erro:", {
-          message: error.message,
-          stack: error.stack,
-        })
         setError(error.message)
       } else {
         setError("Erro ao criar conta. Por favor, tente novamente.")
@@ -241,24 +226,6 @@ export default function CadastroPage() {
                         <span>{emailError}</span>
                       </div>
                     )}
-                  </div>
-
-                  <div className="grid gap-2">
-                    <Label className="text-white">Tipo de conta *</Label>
-                    <RadioGroup value={tipo} onValueChange={(value) => setTipo(value as "voluntario" | "gestor")}>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="voluntario" id="voluntario" />
-                        <Label htmlFor="voluntario" className="text-white font-normal">
-                          Voluntário
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="gestor" id="gestor" />
-                        <Label htmlFor="gestor" className="text-white font-normal">
-                          Gestor
-                        </Label>
-                      </div>
-                    </RadioGroup>
                   </div>
 
                   <div className="grid gap-2">

@@ -13,7 +13,7 @@ export default function BeneficiadoSucessoPage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-zinc-400 mb-4">
-                Mais de 100 Amigos entram em Ação para ajudar a construir um futuro melhor para Jaraguá do Sul, Guaramirim, Schroeder e Corupá. Entre você também em ação e nos ajude a mudar as histórias de vida de muitas famílias.
+                Nosso propósito principal é ajudar pessoas e familias. Conte conosco.
 
               </p>
               <Link href="/">

@@ -17,8 +17,6 @@ export async function createUserProfile(userData: {
   })
 
   try {
-    console.log("[v0] Criando profile com service role...")
-
     // Criar registro em profiles
     const { error: profileError } = await supabaseAdmin.from("profiles").insert({
       id: userData.id,
@@ -29,16 +27,11 @@ export async function createUserProfile(userData: {
     })
 
     if (profileError) {
-      console.error("[v0] Erro ao criar profile:", profileError)
       throw new Error(`Erro ao criar perfil: ${profileError.message}`)
     }
 
-    console.log("[v0] Profile criado com sucesso")
-
     // Se for voluntário, criar registro em voluntarios
     if (userData.tipo === "voluntario") {
-      console.log("[v0] Criando registro de voluntário...")
-
       const { error: voluntarioError } = await supabaseAdmin.from("voluntarios").insert({
         id: userData.id,
         nome: userData.nome,
@@ -47,16 +40,13 @@ export async function createUserProfile(userData: {
       })
 
       if (voluntarioError) {
-        console.error("[v0] Erro ao criar voluntário:", voluntarioError)
         throw new Error(`Erro ao criar registro de voluntário: ${voluntarioError.message}`)
       }
-
-      console.log("[v0] Registro de voluntário criado com sucesso")
     }
 
     return { success: true }
-  } catch (error: any) {
-    console.error("[v0] Erro na criação do perfil:", error)
-    return { success: false, error: error.message }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Erro desconhecido ao criar perfil"
+    return { success: false, error: message }
   }
 }

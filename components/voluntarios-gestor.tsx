@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Trash2, Search, Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { normalizeString } from "@/lib/utils/string-utils"
+import { deleteUser } from "@/app/actions/delete-user"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,7 +42,13 @@ export default function VoluntariosGestor() {
   const loadVoluntarios = async () => {
     setLoading(true)
     const supabase = createClient()
-    const { data } = await supabase.from("voluntarios").select("*").order("nome", { ascending: true })
+    const { data, error } = await supabase.from("voluntarios").select("*").order("nome", { ascending: true })
+
+    if (error) {
+      alert(`Erro ao carregar voluntários: ${error.message}`)
+      setLoading(false)
+      return
+    }
 
     if (data) {
       setVoluntarios(data)
@@ -50,36 +57,29 @@ export default function VoluntariosGestor() {
   }
 
   const handleDelete = async (id: string) => {
-    const supabase = createClient()
-    console.log("[v0] Tentando deletar voluntário:", id)
+    const result = await deleteUser(id)
 
-    const { error } = await supabase.from("voluntarios").delete().eq("id", id)
-
-    if (error) {
-      console.error("[v0] Erro ao deletar voluntário:", error)
-      alert(`Erro ao deletar voluntário: ${error.message}`)
+    if (!result.success) {
+      alert(`Erro ao deletar voluntário: ${result.error}`)
       return
     }
-
-    console.log("[v0] Voluntário deletado com sucesso")
     setVoluntarios(voluntarios.filter((v) => v.id !== id))
     setDeleteDialogOpen(false)
     setVoluntarioToDelete(null)
   }
 
   const handleBulkDelete = async () => {
-    const supabase = createClient()
-    console.log("[v0] Tentando deletar múltiplos voluntários:", selectedIds)
-
-    const { error } = await supabase.from("voluntarios").delete().in("id", selectedIds)
-
-    if (error) {
-      console.error("[v0] Erro ao deletar voluntários:", error)
-      alert(`Erro ao deletar voluntários: ${error.message}`)
-      return
+    const errors: string[] = []
+    for (const id of selectedIds) {
+      const result = await deleteUser(id)
+      if (!result.success) {
+        errors.push(result.error || "Erro desconhecido")
+      }
     }
 
-    console.log("[v0] Voluntários deletados com sucesso")
+    if (errors.length > 0) {
+      alert(`Erro ao deletar alguns voluntários: ${errors[0]}`)
+    }
     setVoluntarios(voluntarios.filter((v) => !selectedIds.includes(v.id)))
     setSelectedIds([])
     setBulkDeleteDialogOpen(false)
@@ -149,66 +149,96 @@ export default function VoluntariosGestor() {
         </div>
       </div>
 
-      {/* Tabela com scroll responsivo */}
-      <div className="border border-zinc-800 rounded-lg overflow-x-auto overflow-y-hidden bg-zinc-900">
-        <div className="min-w-[700px]">
-          {/* Cabeçalho da tabela - fixo */}
-          <div className="bg-zinc-800 border-b border-zinc-700">
-          <div className="grid grid-cols-[50px_1fr_1fr_1fr_80px] gap-4 px-4 py-3 text-sm font-medium text-zinc-300">
-            <div className="flex items-center">
-              <Checkbox
-                checked={selectedIds.length === filteredVoluntarios.length && filteredVoluntarios.length > 0}
-                onCheckedChange={toggleSelectAll}
-                className="border-zinc-600"
-              />
-            </div>
-            <div>Nome</div>
-            <div>E-mail</div>
-            <div>Telefone</div>
-            <div className="text-center">Ações</div>
+      {/* Mobile: cards */}
+      <div className="md:hidden space-y-3">
+        {filteredVoluntarios.length === 0 ? (
+          <div className="text-center py-12 text-zinc-400">
+            {searchTerm ? "Nenhum voluntário encontrado com esse nome" : "Nenhum voluntário cadastrado"}
           </div>
-        </div>
-
-        {/* Corpo da tabela - com scroll */}
-        <div className="max-h-[500px] overflow-y-auto">
-          {filteredVoluntarios.length === 0 ? (
-            <div className="text-center py-12 text-zinc-400">
-              {searchTerm ? "Nenhum voluntário encontrado com esse nome" : "Nenhum voluntário cadastrado"}
-            </div>
-          ) : (
-            filteredVoluntarios.map((voluntario) => (
-              <div
-                key={voluntario.id}
-                className="grid grid-cols-[50px_1fr_1fr_1fr_80px] gap-4 px-4 py-4 border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors"
-              >
-                <div className="flex items-center">
+        ) : (
+          filteredVoluntarios.map((voluntario) => (
+            <div key={voluntario.id} className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 min-w-0">
                   <Checkbox
                     checked={selectedIds.includes(voluntario.id)}
                     onCheckedChange={() => toggleSelect(voluntario.id)}
-                    className="border-zinc-600"
+                    className="border-zinc-600 shrink-0"
                   />
+                  <span className="text-white font-medium truncate">{voluntario.nome}</span>
                 </div>
-                <div className="text-white truncate">{voluntario.nome}</div>
-                <div className="text-zinc-300 truncate">{voluntario.email}</div>
-                <div className="text-zinc-300">{voluntario.telefone}</div>
-                <div className="flex justify-center">
-                  <Button
-                    onClick={() => {
-                      setVoluntarioToDelete(voluntario.id)
-                      setDeleteDialogOpen(true)
-                    }}
-                    variant="ghost"
-                    size="icon"
-                    disabled={selectedIds.length > 0}
-                    className="h-8 w-8 text-red-500 hover:text-red-400 hover:bg-red-500/10"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                <Button
+                  onClick={() => { setVoluntarioToDelete(voluntario.id); setDeleteDialogOpen(true) }}
+                  variant="ghost"
+                  size="icon"
+                  disabled={selectedIds.length > 0}
+                  className="h-8 w-8 text-red-500 hover:text-red-400 shrink-0"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
-            ))
-          )}
-        </div>
+              <div className="text-sm text-zinc-400 truncate">{voluntario.email}</div>
+              {voluntario.telefone && <div className="text-sm text-zinc-400">{voluntario.telefone}</div>}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop: tabela */}
+      <div className="hidden md:block border border-zinc-800 rounded-lg overflow-x-auto overflow-y-hidden bg-zinc-900">
+        <div>
+          <div className="bg-zinc-800 border-b border-zinc-700">
+            <div className="grid grid-cols-[50px_1fr_1fr_1fr_80px] gap-4 px-4 py-3 text-sm font-medium text-zinc-300">
+              <div className="flex items-center">
+                <Checkbox
+                  checked={selectedIds.length === filteredVoluntarios.length && filteredVoluntarios.length > 0}
+                  onCheckedChange={toggleSelectAll}
+                  className="border-zinc-600"
+                />
+              </div>
+              <div>Nome</div>
+              <div>E-mail</div>
+              <div>Telefone</div>
+              <div className="text-center">Ações</div>
+            </div>
+          </div>
+
+          <div className="max-h-[500px] overflow-y-auto">
+            {filteredVoluntarios.length === 0 ? (
+              <div className="text-center py-12 text-zinc-400">
+                {searchTerm ? "Nenhum voluntário encontrado com esse nome" : "Nenhum voluntário cadastrado"}
+              </div>
+            ) : (
+              filteredVoluntarios.map((voluntario) => (
+                <div
+                  key={voluntario.id}
+                  className="grid grid-cols-[50px_1fr_1fr_1fr_80px] gap-4 px-4 py-4 border-b border-zinc-800 hover:bg-zinc-800/50 transition-colors"
+                >
+                  <div className="flex items-center">
+                    <Checkbox
+                      checked={selectedIds.includes(voluntario.id)}
+                      onCheckedChange={() => toggleSelect(voluntario.id)}
+                      className="border-zinc-600"
+                    />
+                  </div>
+                  <div className="text-white truncate">{voluntario.nome}</div>
+                  <div className="text-zinc-300 truncate">{voluntario.email}</div>
+                  <div className="text-zinc-300">{voluntario.telefone}</div>
+                  <div className="flex justify-center">
+                    <Button
+                      onClick={() => { setVoluntarioToDelete(voluntario.id); setDeleteDialogOpen(true) }}
+                      variant="ghost"
+                      size="icon"
+                      disabled={selectedIds.length > 0}
+                      className="h-8 w-8 text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
 

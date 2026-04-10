@@ -1,6 +1,6 @@
 "use client"
 
-import HeroSection from "../hero-section"
+import HeroSection from "@/components/hero-section"
 import JornadaSection from "@/components/jornada-section"
 import NossosPropositos from "@/components/nossos-propositos-section"
 import EventosSection from "@/components/eventos-section"

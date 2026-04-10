@@ -26,7 +26,10 @@ type Beneficiado = {
   id: string
   nome: string
   email: string
-  cep: string
+  telefone: string | null
+  endereco: string | null
+  bairro: string | null
+  cidade: string | null
   necessidade: string
   descricao: string
 }
@@ -74,7 +77,7 @@ export default function KanbanSolicitacoesVoluntario({ userId }: KanbanVoluntari
       .select(
         `
         *,
-        beneficiado:beneficiados(id, nome, email, cep, necessidade, descricao),
+        beneficiado:beneficiados(id, nome, email, telefone, endereco, bairro, cidade, necessidade, descricao),
         voluntario:profiles!solicitacoes_ajuda_voluntario_id_fkey(nome)
       `,
       )
@@ -220,7 +223,7 @@ export default function KanbanSolicitacoesVoluntario({ userId }: KanbanVoluntari
             <h4 className="font-semibold text-white text-lg mb-1">{solicitacao.beneficiado.nome}</h4>
             <div className="flex items-center gap-2 text-sm text-zinc-400">
               <MapPin className="h-3.5 w-3.5" />
-              <span>CEP: {solicitacao.beneficiado.cep}</span>
+              <span>{[solicitacao.beneficiado.bairro, solicitacao.beneficiado.cidade].filter(Boolean).join(", ") || "Endereço não informado"}</span>
             </div>
           </div>
           <Badge variant={getPrioridadeColor(solicitacao.prioridade) as any} className="shrink-0">
@@ -290,26 +293,28 @@ export default function KanbanSolicitacoesVoluntario({ userId }: KanbanVoluntari
       </div>
 
       <Tabs defaultValue="disponiveis" className="w-full">
-        <TabsList className="bg-zinc-900 border border-zinc-800 p-1 h-auto flex-wrap">
-          <TabsTrigger value="disponiveis" className="data-[state=active]:text-white-500 gap-2">
-            Disponíveis Para Assumir
-            <Badge variant="secondary" className="bg-orange-500/20 text-orange-400 ml-1">
-              {aprovadas.length}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="minhas" className="data-[state=active]:text-white-500 gap-2">
-            Minhas Visitas
-            <Badge variant="secondary" className="bg-purple-500/20 text-purple-400 ml-1">
-              {minhasEmAndamento.length}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="concluidas" className="data-[state=active]:text-white-500 gap-2">
-            Concluídos
-            <Badge variant="secondary" className="bg-green-500/20 text-green-400 ml-1">
-              {minhasConcluidas.length}
-            </Badge>
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+          <TabsList className="bg-zinc-900 border border-zinc-800 p-1 h-auto inline-flex w-auto min-w-full md:flex">
+            <TabsTrigger value="disponiveis" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+              Disponíveis
+              <Badge variant="secondary" className="bg-orange-500/20 text-orange-400 ml-1">
+                {aprovadas.length}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="minhas" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+              Minhas Visitas
+              <Badge variant="secondary" className="bg-purple-500/20 text-purple-400 ml-1">
+                {minhasEmAndamento.length}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="concluidas" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+              Concluídos
+              <Badge variant="secondary" className="bg-green-500/20 text-green-400 ml-1">
+                {minhasConcluidas.length}
+              </Badge>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* Aba: Disponíveis */}
         <TabsContent value="disponiveis" className="mt-6">
@@ -368,7 +373,7 @@ export default function KanbanSolicitacoesVoluntario({ userId }: KanbanVoluntari
 
       {/* Dialog de Detalhes */}
       <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
-        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-white">Detalhes da Solicitação</DialogTitle>
             <DialogDescription className="text-zinc-400">
@@ -388,8 +393,9 @@ export default function KanbanSolicitacoesVoluntario({ userId }: KanbanVoluntari
                 <h4 className="text-sm font-medium text-zinc-400">Beneficiado</h4>
                 <div className="bg-zinc-800 p-4 rounded-lg border border-zinc-700 space-y-1">
                   <p className="text-white font-medium">{selectedSolicitacao.beneficiado.nome}</p>
-                  <p className="text-sm text-zinc-400">{selectedSolicitacao.beneficiado.email}</p>
-                  <p className="text-sm text-zinc-400">CEP: {selectedSolicitacao.beneficiado.cep}</p>
+                  {selectedSolicitacao.beneficiado.email && <p className="text-sm text-zinc-400">{selectedSolicitacao.beneficiado.email}</p>}
+                  {selectedSolicitacao.beneficiado.telefone && <p className="text-sm text-zinc-400">Tel: {selectedSolicitacao.beneficiado.telefone}</p>}
+                  <p className="text-sm text-zinc-400">{[selectedSolicitacao.beneficiado.endereco, selectedSolicitacao.beneficiado.bairro, selectedSolicitacao.beneficiado.cidade].filter(Boolean).join(", ")}</p>
                 </div>
               </div>
 
@@ -412,7 +418,18 @@ export default function KanbanSolicitacoesVoluntario({ userId }: KanbanVoluntari
                 </div>
               )}
 
-              {selectedSolicitacao.data_agendada && (
+              {selectedSolicitacao.status === "concluida" ? (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-zinc-400">Data de Conclusão</h4>
+                  <p className="text-white">
+                    {new Date(selectedSolicitacao.updated_at).toLocaleDateString("pt-BR")} às{" "}
+                    {new Date(selectedSolicitacao.updated_at).toLocaleTimeString("pt-BR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+              ) : selectedSolicitacao.data_agendada ? (
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium text-zinc-400">Data Agendada</h4>
                   <p className="text-white">
@@ -423,7 +440,7 @@ export default function KanbanSolicitacoesVoluntario({ userId }: KanbanVoluntari
                     })}
                   </p>
                 </div>
-              )}
+              ) : null}
 
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-zinc-400">Informações do Sistema</h4>
@@ -445,15 +462,14 @@ export default function KanbanSolicitacoesVoluntario({ userId }: KanbanVoluntari
 
               {selectedSolicitacao.status === "em_andamento" && selectedSolicitacao.voluntario_id === userId && (
                 <div className="flex gap-2 pt-4">
-                  {!selectedSolicitacao.data_agendada ? (
-                    <Button
-                      onClick={() => setAgendarDialogOpen(true)}
-                      className="flex-1 bg-purple-600 hover:bg-purple-700"
-                    >
-                      <Calendar className="h-4 w-4 mr-2" />
-                      Agendar Visita
-                    </Button>
-                  ) : (
+                  <Button
+                    onClick={() => setAgendarDialogOpen(true)}
+                    className="flex-1 bg-purple-600 hover:bg-purple-700"
+                  >
+                    <Calendar className="h-4 w-4 mr-2" />
+                    {selectedSolicitacao.data_agendada ? "Alterar Data" : "Agendar Visita"}
+                  </Button>
+                  {selectedSolicitacao.data_agendada && (
                     <Button
                       onClick={() => setConcluirDialogOpen(true)}
                       className="flex-1 bg-green-600 hover:bg-green-700"

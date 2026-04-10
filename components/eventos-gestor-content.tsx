@@ -183,7 +183,7 @@ export default function EventosGestorContent() {
           descricao: insertedEvento.descricao,
           categoria: insertedEvento.categoria,
           data: insertedEvento.data
-        }).catch((err: any) => console.error("Erro ao notificar voluntários:", err));
+        }).catch(() => {});
       }
 
       setTituloError(""); setCategoriaError(""); setDataError(""); setQtdMinError(""); setQtdMaxError("")
@@ -255,7 +255,7 @@ export default function EventosGestorContent() {
           descricao,
           categoria: categoriaFinal,
           data
-        }, "atualizado").catch((err: any) => console.error("Erro ao notificar voluntários na edição:", err));
+        }, "atualizado").catch(() => {});
       }
       setIsEditDialogOpen(false)
       setEventoToEdit(null)
@@ -299,7 +299,7 @@ export default function EventosGestorContent() {
           descricao: evento.descricao,
           categoria: evento.categoria,
           data: evento.data
-        }, "excluido").catch((err: any) => console.error("Erro ao notificar cancelamento:", err));
+        }, "excluido").catch(() => {});
       }
       setDeleteDialogOpen(false)
       setEventoToDelete(null)

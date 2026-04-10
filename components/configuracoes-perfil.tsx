@@ -6,38 +6,43 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Eye, EyeOff } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { deleteOwnAccount } from "@/app/actions/delete-user"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 type ConfiguracoesPerfilProps = {
   userId: string
   userType: "gestor" | "voluntario"
+  initialProfile?: {
+    nome: string | null
+    email: string | null
+    telefone: string | null
+  } | null
 }
 
-export default function ConfiguracoesPerfil({ userId, userType }: ConfiguracoesPerfilProps) {
-  const [nome, setNome] = useState("")
-  const [email, setEmail] = useState("")
-  const [telefone, setTelefone] = useState("")
+export default function ConfiguracoesPerfil({ userId, userType, initialProfile }: ConfiguracoesPerfilProps) {
+  const router = useRouter()
+  const [nome, setNome] = useState(initialProfile?.nome || "")
+  const [email, setEmail] = useState(initialProfile?.email || "")
+  const [telefone, setTelefone] = useState(initialProfile?.telefone || "")
   const [novaSenha, setNovaSenha] = useState("")
   const [confirmarSenha, setConfirmarSenha] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState("")
-
-  useEffect(() => {
-    loadProfile()
-  }, [])
-
-  const loadProfile = async () => {
-    const supabase = createClient()
-    const { data: profile } = await supabase.from("profiles").select("*").eq("id", userId).single()
-
-    if (profile) {
-      setNome(profile.nome || "")
-      setEmail(profile.email || "")
-      setTelefone(profile.telefone || "")
-    }
-  }
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const formatTelefone = (value: string) => {
     const numbers = value.replace(/\D/g, "")
@@ -95,8 +100,9 @@ export default function ConfiguracoesPerfil({ userId, userType }: ConfiguracoesP
       setMessage("Perfil atualizado com sucesso!")
       setNovaSenha("")
       setConfirmarSenha("")
-    } catch (error: any) {
-      setMessage(`Erro ao atualizar perfil: ${error.message}`)
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Erro desconhecido"
+      setMessage(`Erro ao atualizar perfil: ${msg}`)
     } finally {
       setLoading(false)
     }
@@ -213,6 +219,61 @@ export default function ConfiguracoesPerfil({ userId, userType }: ConfiguracoesP
       <Button onClick={handleSave} disabled={loading} className="w-full">
         {loading ? "Salvando..." : "Salvar Alterações"}
       </Button>
+
+      <Card className="bg-zinc-900 border-red-900/50">
+        <CardHeader>
+          <CardTitle className="text-red-400">Zona de Perigo</CardTitle>
+          <CardDescription className="text-zinc-400">
+            {userType === "gestor"
+              ? "Ao excluir sua conta, todos os seus dados serão removidos. Só é possível excluir se houver outro gestor no sistema."
+              : "Ao excluir sua conta, todos os seus dados serão permanentemente removidos."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button
+            variant="destructive"
+            onClick={() => setDeleteDialogOpen(true)}
+            disabled={deleting}
+          >
+            {deleting ? "Excluindo..." : "Excluir Minha Conta"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">Excluir Conta</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              Tem certeza que deseja excluir sua conta? Esta ação é irreversível e todos os seus dados serão removidos permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-zinc-800 text-white border-zinc-700 hover:bg-zinc-700">
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                setDeleting(true)
+                const result = await deleteOwnAccount(userId)
+                if (!result.success) {
+                  setMessage(result.error || "Erro ao excluir conta")
+                  setDeleting(false)
+                  setDeleteDialogOpen(false)
+                  return
+                }
+                const supabase = createClient()
+                await supabase.auth.signOut()
+                router.refresh()
+                router.push("/")
+              }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Sim, excluir minha conta
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

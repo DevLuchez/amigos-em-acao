@@ -23,7 +23,7 @@ export default async function GestorConfiguracoesPage() {
     redirect("/dashboard/voluntario")
   }
 
-  const { data: profile } = await supabase.from("profiles").select("nome").eq("id", user.id).single()
+  const { data: profile } = await supabase.from("profiles").select("nome, email, telefone").eq("id", user.id).single()
 
   return (
     <SidebarProvider>
@@ -31,7 +31,7 @@ export default async function GestorConfiguracoesPage() {
         <DashboardSidebar userType="gestor" userName={profile?.nome || "Gestor"} />
 
         <DashboardLayoutWrapper>
-          <ConfiguracoesPerfil userId={user.id} userType="gestor" />
+          <ConfiguracoesPerfil userId={user.id} userType="gestor" initialProfile={profile} />
         </DashboardLayoutWrapper>
       </div>
     </SidebarProvider>

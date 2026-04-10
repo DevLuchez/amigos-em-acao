@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { createClient } from "@/lib/supabase/client"
+import { createBeneficiado } from "@/app/actions/create-beneficiado"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -51,7 +51,7 @@ export default function BeneficiadoCadastroPage() {
     setError(null)
 
     let hasError = false
-    
+
     if (!nome) { setNomeError("O nome é obrigatório."); hasError = true } else setNomeError("")
     if (!telefone) { setTelefoneError("O telefone é obrigatório."); hasError = true } else if (telefone.length < 14) { setTelefoneError("O telefone deve ser completo (DDD + número)."); hasError = true } else setTelefoneError("")
     if (email && !email.includes("@")) { setEmailError("E-mail inválido."); hasError = true } else setEmailError("")
@@ -66,36 +66,22 @@ export default function BeneficiadoCadastroPage() {
       return
     }
 
-    const supabase = createClient()
-
     try {
-      const { data: beneficiadoData, error: beneficiadoError } = await supabase
-        .from("beneficiados")
-        .insert({
-          nome,
-          email,
-          telefone,
-          endereco,
-          bairro,
-          cidade,
-          complemento,
-          necessidade,
-          descricao,
-        })
-        .select()
-        .single()
-
-      if (beneficiadoError) throw beneficiadoError
-
-      const { error: solicitacaoError } = await supabase.from("solicitacoes_ajuda").insert({
-        beneficiado_id: beneficiadoData.id,
-        status: "nova",
-        prioridade: "media", // Prioridade padrão
+      const result = await createBeneficiado({
+        nome,
+        email,
+        telefone,
+        endereco,
+        bairro,
+        cidade,
+        complemento,
+        necessidade,
+        descricao,
       })
 
-      if (solicitacaoError) {
-        console.error("[v0] Erro ao criar solicitação:", solicitacaoError)
-        // Mesmo com erro na solicitação, continua o fluxo pois o beneficiado foi cadastrado
+      if (!result.success) {
+        setError(result.error || "Erro ao enviar cadastro")
+        return
       }
 
       router.push("/beneficiado/sucesso")

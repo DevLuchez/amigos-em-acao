@@ -117,18 +117,18 @@ export default function EventosSection() {
           </p>
         </motion.div>
 
-        <div className="flex justify-center gap-4 mb-12">
+        <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-12">
           <Button
             onClick={() => setAbaAtiva("futuros")}
             variant={abaAtiva === "futuros" ? "default" : "outline"}
-            className="font-bold px-8 py-6 text-lg"
+            className="font-bold px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg"
           >
             Eventos Futuros
           </Button>
           <Button
             onClick={() => setAbaAtiva("realizados")}
             variant={abaAtiva === "realizados" ? "default" : "outline"}
-            className="font-bold px-8 py-6 text-lg"
+            className="font-bold px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg"
           >
             Eventos Realizados
           </Button>
@@ -246,7 +246,7 @@ export default function EventosSection() {
 
               <Link
                 href={`/eventos?tipo=${abaAtiva === "realizados" ? "realizados" : "futuros"}`}
-                className="absolute right-0 top-1/2 -translate-y-1/2 flex flex-col items-center gap-2 group cursor-pointer"
+                className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 flex-col items-center gap-2 group cursor-pointer"
               >
                 <motion.div
                   whileHover={{ x: 5 }}

@@ -142,22 +142,31 @@ export default function VoluntarioDashboard({ userId }: { userId: string }) {
     }
     const evento = eventos.find((e) => e.id === eventoId)
     if (!evento) return
-    const podeInscrever = podeSeInscrever(
-      evento.data,
-      evento.voluntarios_inscritos || 0,
-      evento.quantidade_maxima_voluntarios,
-    )
-    if (!podeInscrever) {
+
+    const supabase = createClient()
+
+    // Re-consulta o número real de inscritos para evitar race condition
+    const { data: eventoAtual } = await supabase
+      .from("eventos")
+      .select("quantidade_inscritos, quantidade_maxima_voluntarios")
+      .eq("id", eventoId)
+      .single()
+
+    const inscritosAtual = eventoAtual?.quantidade_inscritos ?? evento.voluntarios_inscritos ?? 0
+    const maxAtual = eventoAtual?.quantidade_maxima_voluntarios ?? evento.quantidade_maxima_voluntarios
+
+    if (!podeSeInscrever(evento.data, inscritosAtual, maxAtual)) {
       toast({
         title: "Evento lotado",
         description: "QTDE máxima já atingida. Te vejo no próximo evento!",
         variant: "destructive",
         duration: 5000,
       })
+      await loadEventosWithUserId(authUserId)
       return
     }
-    const supabase = createClient()
-    const { data, error } = await supabase
+
+    const { error } = await supabase
       .from("participacoes_eventos")
       .insert({
         evento_id: eventoId,
@@ -173,7 +182,6 @@ export default function VoluntarioDashboard({ userId }: { userId: string }) {
       })
       await loadEventosWithUserId(authUserId)
     } else {
-
       let errorMessage = "Ocorreu um erro ao confirmar sua participação. Tente novamente."
       if (error.code === "23505") {
         errorMessage = "Você já confirmou participação neste evento."
@@ -204,7 +212,14 @@ export default function VoluntarioDashboard({ userId }: { userId: string }) {
       .delete()
       .eq("evento_id", eventoToCancel)
       .eq("voluntario_id", authUserId)
-    if (!error) {
+    if (error) {
+      toast({
+        title: "Erro ao cancelar participação",
+        description: "Não foi possível cancelar sua participação. Tente novamente.",
+        variant: "destructive",
+        duration: 5000,
+      })
+    } else {
       toast({
         title: "Participação cancelada",
         description: "Sua participação foi cancelada com sucesso.",

@@ -23,7 +23,7 @@ export default async function VoluntarioConfiguracoesPage() {
     redirect("/dashboard/gestor")
   }
 
-  const { data: profile } = await supabase.from("profiles").select("nome").eq("id", user.id).single()
+  const { data: profile } = await supabase.from("profiles").select("nome, email, telefone").eq("id", user.id).single()
 
   return (
     <SidebarProvider>
@@ -31,7 +31,7 @@ export default async function VoluntarioConfiguracoesPage() {
         <DashboardSidebar userType="voluntario" userName={profile?.nome || "Voluntário"} />
 
         <DashboardLayoutWrapper>
-          <ConfiguracoesPerfil userId={user.id} userType="voluntario" />
+          <ConfiguracoesPerfil userId={user.id} userType="voluntario" initialProfile={profile} />
         </DashboardLayoutWrapper>
       </div>
     </SidebarProvider>

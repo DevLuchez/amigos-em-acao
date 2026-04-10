@@ -18,7 +18,10 @@
       "Bash(npx vercel:*)",
       "Bash(npm view:*)",
       "Bash(python3 -c \"import sys,json; versions=[v for v in json.load\\(sys.stdin\\) if v.startswith\\('15.2.'\\)]; print\\('\\\\n'.join\\(versions[-5:]\\)\\)\")",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(grep:*)",
+      "Bash(find:*)"
     ]
   }
 }

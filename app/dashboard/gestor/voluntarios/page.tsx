@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import DashboardSidebar from "@/components/dashboard-sidebar"
-import VoluntariosGestor from "@/components/voluntarios-gestor"
+import UsuariosGestorTabs from "@/components/usuarios-gestor-tabs"
 import { SidebarProvider } from "@/contexts/sidebar-context"
 import DashboardLayoutWrapper from "@/components/dashboard-layout-wrapper"
 
@@ -31,7 +31,7 @@ export default async function VoluntariosPage() {
         <DashboardSidebar userType="gestor" userName={profile?.nome || "Gestor"} />
 
         <DashboardLayoutWrapper>
-          <VoluntariosGestor />
+          <UsuariosGestorTabs currentUserId={user.id} />
         </DashboardLayoutWrapper>
       </div>
     </SidebarProvider>
