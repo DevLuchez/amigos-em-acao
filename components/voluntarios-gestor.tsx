@@ -8,6 +8,7 @@ import { Trash2, Search, Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { normalizeString } from "@/lib/utils/string-utils"
 import { deleteUser } from "@/app/actions/delete-user"
+import { notifyVoluntariosSolicitacaoDisponivel } from "@/app/actions/notify-solicitacoes"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -57,18 +58,51 @@ export default function VoluntariosGestor() {
   }
 
   const handleDelete = async (id: string) => {
+    const supabase = createClient()
+
+    // Reverter solicitações em_andamento do voluntário para aprovada (aba Buscando)
+    const { data: solicitacoesRevertidas } = await supabase
+      .from("solicitacoes_ajuda")
+      .update({ status: "aprovada", voluntario_id: null, data_agendada: null })
+      .eq("voluntario_id", id)
+      .eq("status", "em_andamento")
+      .select("beneficiado:beneficiados(nome, necessidade)")
+
     const result = await deleteUser(id)
 
     if (!result.success) {
       alert(`Erro ao deletar voluntário: ${result.error}`)
       return
     }
+
+    // Notificar voluntários sobre cada solicitação que voltou para Buscando
+    if (solicitacoesRevertidas && solicitacoesRevertidas.length > 0) {
+      solicitacoesRevertidas.forEach((s: any) => {
+        if (s.beneficiado) {
+          notifyVoluntariosSolicitacaoDisponivel(
+            s.beneficiado.nome,
+            s.beneficiado.necessidade
+          ).catch(() => {})
+        }
+      })
+    }
+
     setVoluntarios(voluntarios.filter((v) => v.id !== id))
     setDeleteDialogOpen(false)
     setVoluntarioToDelete(null)
   }
 
   const handleBulkDelete = async () => {
+    const supabase = createClient()
+
+    // Reverter solicitações em_andamento de todos os voluntários selecionados
+    const { data: solicitacoesRevertidas } = await supabase
+      .from("solicitacoes_ajuda")
+      .update({ status: "aprovada", voluntario_id: null, data_agendada: null })
+      .in("voluntario_id", selectedIds)
+      .eq("status", "em_andamento")
+      .select("beneficiado:beneficiados(nome, necessidade)")
+
     const errors: string[] = []
     for (const id of selectedIds) {
       const result = await deleteUser(id)
@@ -80,6 +114,19 @@ export default function VoluntariosGestor() {
     if (errors.length > 0) {
       alert(`Erro ao deletar alguns voluntários: ${errors[0]}`)
     }
+
+    // Notificar voluntários sobre cada solicitação que voltou para Buscando
+    if (solicitacoesRevertidas && solicitacoesRevertidas.length > 0) {
+      solicitacoesRevertidas.forEach((s: any) => {
+        if (s.beneficiado) {
+          notifyVoluntariosSolicitacaoDisponivel(
+            s.beneficiado.nome,
+            s.beneficiado.necessidade
+          ).catch(() => {})
+        }
+      })
+    }
+
     setVoluntarios(voluntarios.filter((v) => !selectedIds.includes(v.id)))
     setSelectedIds([])
     setBulkDeleteDialogOpen(false)
