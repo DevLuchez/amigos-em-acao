@@ -1,7 +1,7 @@
 export const CATEGORIAS_EVENTOS = [
   { value: "acao_social",          label: "Ação Social" },
-  { value: "arrecadacao_mercados", label: "Arrecadação variada em Mercados" },
-  { value: "entrega_cesta_basica", label: "Entrega de cesta básica" },
+  { value: "arrecadacao_mercados", label: "Arrecadação Variada em Mercados" },
+  { value: "entrega_cesta_basica", label: "Entrega de Cesta Básica" },
   { value: "campanha_feijoada",    label: "Campanha da Feijoada" },
   { value: "campanha_agasalho",    label: "Campanha do Agasalho" },
   { value: "campanha_natal",       label: "Campanha de Natal" },

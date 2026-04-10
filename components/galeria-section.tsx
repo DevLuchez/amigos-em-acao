@@ -3,8 +3,10 @@
 import { useEffect, useState, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { motion, AnimatePresence } from "framer-motion"
-import { Camera, X, ChevronLeft, ChevronRight, Calendar } from "lucide-react"
+import { Camera, X, ChevronLeft, ChevronRight, LayoutGrid } from "lucide-react"
 import { getStatusEvento, formatEventoDateTime } from "@/lib/utils/evento-utils"
+import { getCategoriaLabel, CATEGORIAS_EVENTOS } from "@/lib/utils/categorias-eventos"
+import { Button } from "@/components/ui/button"
 
 type Foto = {
   id: string
@@ -14,6 +16,7 @@ type Foto = {
 type EventoComFotos = {
   id: string
   titulo: string
+  categoria: string
   data: string
   fotos: Foto[]
 }
@@ -22,6 +25,8 @@ export default function GaleriaSection() {
   const [eventos, setEventos] = useState<EventoComFotos[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isMounted, setIsMounted] = useState(false)
+  const [categoriaAtiva, setCategoriaAtiva] = useState<string>("todas")
+  const [mostrarTodos, setMostrarTodos] = useState(false)
 
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -39,7 +44,7 @@ export default function GaleriaSection() {
 
     const { data: eventosData } = await supabase
       .from("eventos")
-      .select("id, titulo, data")
+      .select("id, titulo, categoria, data")
       .eq("publico", true)
       .order("data", { ascending: false })
 
@@ -55,8 +60,6 @@ export default function GaleriaSection() {
     const eventosComFotos: EventoComFotos[] = []
 
     for (const evento of eventosRealizados) {
-      if (eventosComFotos.length >= 3) break
-
       const { data: fotosEvento } = await supabase
         .from("evento_fotos")
         .select("id, url")
@@ -67,6 +70,7 @@ export default function GaleriaSection() {
         eventosComFotos.push({
           id: evento.id,
           titulo: evento.titulo,
+          categoria: evento.categoria,
           data: evento.data,
           fotos: fotosEvento,
         })
@@ -77,9 +81,9 @@ export default function GaleriaSection() {
     setIsLoading(false)
   }
 
-  const openLightbox = (evento: EventoComFotos, fotoIndex: number) => {
+  const openLightbox = (evento: EventoComFotos) => {
     setLightboxFotos(evento.fotos)
-    setLightboxIndex(fotoIndex)
+    setLightboxIndex(0)
     setLightboxTitulo(evento.titulo)
     setLightboxOpen(true)
   }
@@ -111,10 +115,32 @@ export default function GaleriaSection() {
 
   if (isLoading || eventos.length === 0) return null
 
+  // Categorias presentes nos dados, na ordem definida em CATEGORIAS_EVENTOS
+  const categoriasPresentes = CATEGORIAS_EVENTOS
+    .map((c) => c.value)
+    .filter((v) => eventos.some((e) => e.categoria === v))
+
+  // Filtra por categoria ativa
+  const eventosFiltrados =
+    categoriaAtiva === "todas"
+      ? eventos
+      : eventos.filter((e) => e.categoria === categoriaAtiva)
+
+  // Mostra 3 ou todos
+  const eventosParaMostrar = mostrarTodos
+    ? eventosFiltrados
+    : eventosFiltrados.slice(0, 3)
+
+  const handleCategoriaChange = (cat: string) => {
+    setCategoriaAtiva(cat)
+    setMostrarTodos(false)
+  }
+
   return (
     <>
       <section id="galeria" className="relative py-20 bg-gray-50">
         <div className="container mx-auto px-6 relative z-10">
+          {/* Título */}
           <motion.div
             initial={isMounted ? { opacity: 0, y: 20 } : false}
             whileInView={{ opacity: 1, y: 0 }}
@@ -129,79 +155,120 @@ export default function GaleriaSection() {
               </span>
             </h2>
             <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Momentos que marcam nossa trajetória de solidariedade e
-              transformação social.
+              Momentos que marcam nossa trajetória de solidariedade e transformação social.
             </p>
           </motion.div>
 
-          <div className="space-y-12">
-            {eventos.map((evento, eventoIndex) => {
-              const { date, time } = formatEventoDateTime(evento.data)
-              return (
-                <motion.div
-                  key={evento.id}
-                  initial={isMounted ? { opacity: 0, y: 30 } : false}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{
-                    duration: 0.6,
-                    delay: eventoIndex * 0.15,
-                    ease: [0.16, 1, 0.3, 1],
-                  }}
-                  viewport={{ once: true }}
-                  className="bg-white border-2 border-gray-200 hover:border-gray-900 transition-colors overflow-hidden"
-                  style={{
-                    clipPath:
-                      "polygon(30px 0%, calc(100% - 30px) 0%, 100% 30px, 100% 100%, calc(100% - 30px) 100%, 30px 100%, 0 100%, 0 0)",
-                    boxShadow: "4px 4px 0px hsl(var(--border))",
-                  }}
+          {/* Abas de categoria — scroll horizontal em mobile */}
+          <div className="overflow-x-auto -mx-6 px-6 pb-2 mb-10">
+            <div className="flex gap-3 w-max mx-auto">
+              <Button
+                onClick={() => handleCategoriaChange("todas")}
+                variant={categoriaAtiva === "todas" ? "default" : "outline"}
+                className="font-bold px-5 py-4 text-sm sm:px-8 sm:py-6 sm:text-lg whitespace-nowrap"
+              >
+                Todas
+              </Button>
+              {categoriasPresentes.map((cat) => (
+                <Button
+                  key={cat}
+                  onClick={() => handleCategoriaChange(cat)}
+                  variant={categoriaAtiva === cat ? "default" : "outline"}
+                  className="font-bold px-5 py-4 text-sm sm:px-8 sm:py-6 sm:text-lg whitespace-nowrap"
                 >
-                  {/* Header do evento */}
-                  <div className="p-6 md:p-8 border-b border-gray-100">
-                    <div className="flex items-center gap-4">
-                      <div className="bg-gray-900 text-white p-3">
-                        <Camera className="w-6 h-6" />
+                  {getCategoriaLabel(cat)}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Grid de cards */}
+          {eventosFiltrados.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
+                {eventosParaMostrar.map((evento, index) => {
+                  const capaUrl = evento.fotos[0].url
+                  const { date } = formatEventoDateTime(evento.data)
+                  return (
+                    <motion.div
+                      key={evento.id}
+                      initial={isMounted ? { opacity: 0, y: 20 } : false}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: 0.6,
+                        delay: index * 0.1,
+                        ease: [0.16, 1, 0.3, 1],
+                      }}
+                      viewport={{ once: true }}
+                      whileHover={{ y: -5 }}
+                      onClick={() => openLightbox(evento)}
+                      className="cursor-pointer group relative border-2 border-gray-200 hover:border-gray-900 transition-colors overflow-hidden aspect-square"
+                      style={{
+                        clipPath:
+                          "polygon(30px 0%, calc(100% - 30px) 0%, 100% 30px, 100% 100%, calc(100% - 30px) 100%, 30px 100%, 0 100%, 0 0)",
+                        boxShadow: "4px 4px 0px hsl(var(--border))",
+                      }}
+                    >
+                      {/* Foto de capa */}
+                      <img
+                        src={capaUrl}
+                        alt={evento.titulo}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        loading="lazy"
+                      />
+
+                      {/* Badge de contagem (visível sem hover) */}
+                      <div className="absolute top-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded flex items-center gap-1 group-hover:opacity-0 transition-opacity duration-300">
+                        <Camera className="w-3 h-3" />
+                        {evento.fotos.length}
                       </div>
-                      <div>
-                        <h3 className="text-xl font-black text-gray-900 tracking-wider">
+
+                      {/* Overlay no hover */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/70 transition-all duration-300 flex flex-col justify-end p-5 opacity-0 group-hover:opacity-100">
+                        <span className="text-xs font-bold text-white/60 uppercase tracking-widest mb-1.5">
+                          {getCategoriaLabel(evento.categoria)}
+                        </span>
+                        <h3 className="text-white font-black text-lg tracking-wide leading-tight mb-2">
                           {evento.titulo}
                         </h3>
-                        <div className="flex items-center text-sm text-gray-500 mt-1">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          <span>{date} às {time}</span>
-                          <span className="mx-2">•</span>
-                          <span>{evento.fotos.length} foto{evento.fotos.length !== 1 ? "s" : ""}</span>
+                        <div className="flex items-center gap-1.5 text-sm text-white/70">
+                          <Camera className="w-3.5 h-3.5" />
+                          <span>{date}</span>
+                          <span className="mx-1">·</span>
+                          <span>
+                            {evento.fotos.length} foto
+                            {evento.fotos.length !== 1 ? "s" : ""}
+                          </span>
                         </div>
                       </div>
-                    </div>
-                  </div>
+                    </motion.div>
+                  )
+                })}
+              </div>
 
-                  {/* Grid de fotos */}
-                  <div className="p-4 md:p-6">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                      {evento.fotos.map((foto, fotoIndex) => (
-                        <motion.div
-                          key={foto.id}
-                          whileHover={{ scale: 1.03 }}
-                          onClick={() => openLightbox(evento, fotoIndex)}
-                          className="relative cursor-pointer overflow-hidden rounded-lg group aspect-square"
-                        >
-                          <img
-                            src={foto.url}
-                            alt={`Foto de ${evento.titulo}`}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                            loading="lazy"
-                          />
-                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300 flex items-center justify-center">
-                            <Camera className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              )
-            })}
-          </div>
+              {/* Toggle Ver todos / Ver menos */}
+              {eventosFiltrados.length > 3 && (
+                <div className="flex justify-center">
+                  <Button
+                    onClick={() => setMostrarTodos(!mostrarTodos)}
+                    variant="outline"
+                    className="font-bold px-8 py-6 text-base gap-2"
+                  >
+                    <LayoutGrid className="w-5 h-5" />
+                    {mostrarTodos
+                      ? "Ver menos"
+                      : `Ver todos (${eventosFiltrados.length})`}
+                  </Button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-xl text-gray-600">
+                Nenhum evento com fotos nessa categoria.
+              </p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -252,9 +319,7 @@ export default function GaleriaSection() {
                 className="max-w-full max-h-[78vh] object-contain rounded-lg"
               />
               <div className="text-center mt-4">
-                <p className="text-white font-bold text-lg">
-                  {lightboxTitulo}
-                </p>
+                <p className="text-white font-bold text-lg">{lightboxTitulo}</p>
                 <p className="text-white/50 text-sm mt-1">
                   {lightboxIndex + 1} / {lightboxFotos.length}
                 </p>
