@@ -37,6 +37,7 @@ import { Plus, Trash2, Calendar, Edit, Eye, MoreVertical, Copy, X, CheckSquare, 
 import { getStatusEvento, formatEventoDateTime } from "@/lib/utils/evento-utils"
 import { stringContains } from "@/lib/utils/string-utils"
 import { notifyVolunteersAboutEvent } from "@/app/actions/notify-volunteers"
+import { CATEGORIAS_EVENTOS as categorias } from "@/lib/utils/categorias-eventos"
 import FotosEventoDialog from "./fotos-evento-dialog"
 type Evento = {
   id: string
@@ -92,15 +93,6 @@ export default function EventosGestorContent() {
   const [dataError, setDataError] = useState<string>("")
   const [qtdMinError, setQtdMinError] = useState<string>("")
 
-  const categorias = [
-    { value: "acao_social", label: "Ação Social" },
-    { value: "arrecadacao_mercados", label: "Arrecadação variada em Mercados" },
-    { value: "entrega_cesta_basica", label: "Entrega de cesta básica" },
-    { value: "campanha_feijoada", label: "Campanha da Feijoada" },
-    { value: "campanha_agasalho", label: "Campanha do Agasalho" },
-    { value: "campanha_natal", label: "Campanha de Natal" },
-    { value: "outros", label: "Outros" },
-  ]
 
   useEffect(() => {
     loadEventos()
@@ -367,7 +359,7 @@ export default function EventosGestorContent() {
 
     const supabase = createClient()
 
-    const { error } = await supabase.from("eventos").insert({
+    const { data: insertedEvento, error } = await supabase.from("eventos").insert({
       titulo,
       descricao,
       categoria: categoriaFinal,
@@ -375,11 +367,23 @@ export default function EventosGestorContent() {
       publico,
       quantidade_minima_voluntarios: qtdMinima,
       quantidade_maxima_voluntarios: quantidadeMaxima ? Number.parseInt(quantidadeMaxima) : null,
-    })
+    }).select().single()
 
     if (!error) {
       setIsDuplicateDialogOpen(false)
       setEventoToDuplicate(null)
+
+      // Notificar como novo evento se for futuro
+      if (new Date(data) > new Date()) {
+        notifyVolunteersAboutEvent({
+          id: insertedEvento.id,
+          titulo: insertedEvento.titulo,
+          descricao: insertedEvento.descricao,
+          categoria: insertedEvento.categoria,
+          data: insertedEvento.data,
+        }).catch(() => {})
+      }
+
       setTituloError(""); setCategoriaError(""); setDataError(""); setQtdMinError(""); setQtdMaxError("")
       setTitulo("")
       setDescricao("")
@@ -448,8 +452,24 @@ export default function EventosGestorContent() {
 
     const supabase = createClient()
 
+    // Identificar eventos futuros antes de deletar (para notificar)
+    const eventosFuturosParaNotificar = eventos.filter(
+      (e) => selectedEventos.includes(e.id) && new Date(e.data) > new Date()
+    )
+
     // Deletar todos os eventos selecionados
     await Promise.all(selectedEventos.map((id) => supabase.from("eventos").delete().eq("id", id)))
+
+    // Notificar sobre cada evento futuro excluído
+    eventosFuturosParaNotificar.forEach((evento) => {
+      notifyVolunteersAboutEvent({
+        id: evento.id,
+        titulo: evento.titulo,
+        descricao: evento.descricao,
+        categoria: evento.categoria,
+        data: evento.data,
+      }, "excluido").catch(() => {})
+    })
 
     setDeleteMultipleDialogOpen(false)
     exitSelectionMode()
@@ -1175,7 +1195,16 @@ export default function EventosGestorContent() {
 
                     <CardHeader>
                       <CardTitle className="text-white text-lg pr-8">{evento.titulo}</CardTitle>
-                      <CardDescription className="text-zinc-400 flex items-center gap-1">
+                      <CardDescription className="text-zinc-400 flex items-center gap-2">
+                        {status === "proximo" ? (
+                          <Badge variant="outline" className="text-xs bg-blue-500/20 text-blue-400 border-blue-500/30">
+                            Futuro
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs bg-green-500/20 text-green-400 border-green-500/30">
+                            Realizado
+                          </Badge>
+                        )}
                         <Calendar className="h-4 w-4" />
                         {date} às {time}
                       </CardDescription>
@@ -1200,18 +1229,6 @@ export default function EventosGestorContent() {
                         <span className="text-xs bg-zinc-700 text-zinc-300 px-2 py-1 rounded">
                           {categorias.find((c) => c.value === evento.categoria)?.label || evento.categoria}
                         </span>
-                        {status === "proximo" ? (
-                          <Badge variant="outline" className="text-xs bg-blue-500/20 text-blue-400 border-blue-500/30">
-                            Futuro
-                          </Badge>
-                        ) : (
-                          <Badge
-                            variant="outline"
-                            className="text-xs bg-green-500/20 text-green-400 border-green-500/30"
-                          >
-                            Realizado
-                          </Badge>
-                        )}
                         {evento.publico && (
                           <span className="text-xs bg-purple-500/20 text-purple-400 px-2 py-1 rounded">Público</span>
                         )}
@@ -1444,7 +1461,6 @@ export default function EventosGestorContent() {
                         <span className="text-xs bg-zinc-700 text-zinc-300 px-2 py-1 rounded">
                           {categorias.find((c) => c.value === evento.categoria)?.label}
                         </span>
-                        <span className="text-xs bg-green-500/20 text-green-400 px-2 py-1 rounded">Concluído</span>
                         {evento.publico && (
                           <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded">Público</span>
                         )}

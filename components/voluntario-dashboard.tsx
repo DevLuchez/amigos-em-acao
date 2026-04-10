@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { getStatusEvento, formatEventoDateTime, podeSeInscrever } from "@/lib/utils/evento-utils"
+import { getCategoriaLabel } from "@/lib/utils/categorias-eventos"
 
 type Evento = {
   id: string
@@ -34,12 +35,6 @@ type Evento = {
   voluntarios_inscritos?: number
 }
 
-const categorias = [
-  { value: "doacoes_variadas", label: "Doações Variadas" },
-  { value: "comida", label: "Comida" },
-  { value: "vestimenta", label: "Vestimenta" },
-  { value: "financeira", label: "Financeira" },
-]
 
 export default function VoluntarioDashboard({ userId }: { userId: string }) {
   const router = useRouter()
@@ -331,7 +326,7 @@ export default function VoluntarioDashboard({ userId }: { userId: string }) {
                           )}
                         </div>
                         <p className="text-sm text-zinc-400">
-                          Categoria: {categorias.find((c) => c.value === evento.categoria)?.label}
+                          Categoria: {getCategoriaLabel(evento.categoria)}
                         </p>
                         <div className="text-sm text-zinc-400">
                           <p>
@@ -403,7 +398,7 @@ export default function VoluntarioDashboard({ userId }: { userId: string }) {
                           )}
                         </div>
                         <p className="text-sm text-zinc-400">
-                          Categoria: {categorias.find((c) => c.value === evento.categoria)?.label}
+                          Categoria: {getCategoriaLabel(evento.categoria)}
                         </p>
                         <Button
                           onClick={() => confirmCancelar(evento.id)}

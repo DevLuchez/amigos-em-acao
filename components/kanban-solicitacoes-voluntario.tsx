@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { CheckCircle, Loader2, Calendar, Clock, MapPin } from 'lucide-react'
+import { CheckCircle, Loader2, Calendar, Clock, MapPin, AlertCircle } from 'lucide-react'
 import { useEffect, useState } from "react"
 
 type Beneficiado = {
@@ -132,7 +132,24 @@ export default function KanbanSolicitacoesVoluntario({ userId }: KanbanVoluntari
       return
     }
 
-    const dataHora = `${dataAgendada}T${horaAgendada}:00`
+    // Monta o datetime com o offset do fuso horário local para evitar conversão UTC incorreta
+    const localOffset = new Date().getTimezoneOffset() // ex: 180 para UTC-3
+    const sign = localOffset >= 0 ? "-" : "+"
+    const absOffset = Math.abs(localOffset)
+    const offsetHours = String(Math.floor(absOffset / 60)).padStart(2, "0")
+    const offsetMinutes = String(absOffset % 60).padStart(2, "0")
+    const dataHora = `${dataAgendada}T${horaAgendada}:00${sign}${offsetHours}:${offsetMinutes}`
+
+    // Validação: impede agendamento no passado (além do min no input, cobre digitação manual)
+    if (new Date(dataHora) <= new Date()) {
+      toast({
+        title: "Data inválida",
+        description: "A visita deve ser agendada para uma data e hora futuras.",
+        variant: "destructive",
+        duration: 3000,
+      })
+      return
+    }
     const supabase = createClient()
     const { error } = await supabase
       .from("solicitacoes_ajuda")
@@ -207,7 +224,8 @@ export default function KanbanSolicitacoesVoluntario({ userId }: KanbanVoluntari
 
   // Filtrar solicitações por status e responsabilidade
   const aprovadas = solicitacoes.filter((s) => s.status === "aprovada")
-  const minhasEmAndamento = solicitacoes.filter((s) => s.status === "em_andamento" && s.voluntario_id === userId)
+  const minhasAssumidas = solicitacoes.filter((s) => s.status === "em_andamento" && s.voluntario_id === userId && !s.data_agendada)
+  const minhasAgendadas = solicitacoes.filter((s) => s.status === "em_andamento" && s.voluntario_id === userId && !!s.data_agendada)
   const minhasConcluidas = solicitacoes.filter((s) => s.status === "concluida" && s.voluntario_id === userId)
 
   const renderCard = (solicitacao: Solicitacao) => (
@@ -251,24 +269,53 @@ export default function KanbanSolicitacoesVoluntario({ userId }: KanbanVoluntari
 
         {/* Footer com informações adicionais */}
         <div className="pt-3 border-t border-zinc-800 space-y-2">
-          {solicitacao.data_agendada && (
-            <div className="flex items-center gap-2 text-sm">
-              <Clock className="h-4 w-4 text-zinc-500" />
-              <span className="text-zinc-400">Agendado:</span>
-              <span className="text-white">
-                {new Date(solicitacao.data_agendada).toLocaleDateString("pt-BR")} às{" "}
-                {new Date(solicitacao.data_agendada).toLocaleTimeString("pt-BR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            </div>
+          {solicitacao.status === "concluida" ? (
+            <>
+              {solicitacao.data_agendada && (
+                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>Visita agendada: {new Date(solicitacao.data_agendada).toLocaleDateString("pt-BR")} às {new Date(solicitacao.data_agendada).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <Clock className="h-3.5 w-3.5" />
+                <span>Recebido em {new Date(solicitacao.created_at).toLocaleDateString("pt-BR")} às {new Date(solicitacao.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <Clock className="h-3.5 w-3.5" />
+                <span>Concluído em {new Date(solicitacao.updated_at).toLocaleDateString("pt-BR")} às {new Date(solicitacao.updated_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              {solicitacao.data_agendada && (() => {
+                const vencida = new Date(solicitacao.data_agendada) < new Date()
+                return (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className={`h-4 w-4 ${vencida ? "text-red-400" : "text-zinc-500"}`} />
+                    <span className={vencida ? "text-red-400" : "text-zinc-400"}>Visita agendada:</span>
+                    <span className={vencida ? "text-red-400 font-semibold" : "text-white"}>
+                      {new Date(solicitacao.data_agendada).toLocaleDateString("pt-BR")} às{" "}
+                      {new Date(solicitacao.data_agendada).toLocaleTimeString("pt-BR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                )
+              })()}
+              {solicitacao.status === "em_andamento" && !solicitacao.data_agendada && (
+                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>Assumida em: {new Date(solicitacao.updated_at).toLocaleDateString("pt-BR")} às {new Date(solicitacao.updated_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <Clock className="h-3.5 w-3.5" />
+                <span>Recebido em {new Date(solicitacao.created_at).toLocaleDateString("pt-BR")}</span>
+              </div>
+            </>
           )}
-
-          <div className="flex items-center gap-2 text-xs text-zinc-500">
-            <Clock className="h-3.5 w-3.5" />
-            <span>Criado em {new Date(solicitacao.created_at).toLocaleDateString("pt-BR")}</span>
-          </div>
         </div>
       </div>
     </Card>
@@ -301,10 +348,16 @@ export default function KanbanSolicitacoesVoluntario({ userId }: KanbanVoluntari
                 {aprovadas.length}
               </Badge>
             </TabsTrigger>
+            <TabsTrigger value="assumidas" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+              Assumidas
+              <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-400 ml-1">
+                {minhasAssumidas.length}
+              </Badge>
+            </TabsTrigger>
             <TabsTrigger value="minhas" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
-              Minhas Visitas
+              Agendadas
               <Badge variant="secondary" className="bg-purple-500/20 text-purple-400 ml-1">
-                {minhasEmAndamento.length}
+                {minhasAgendadas.length}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="concluidas" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
@@ -334,20 +387,43 @@ export default function KanbanSolicitacoesVoluntario({ userId }: KanbanVoluntari
           </div>
         </TabsContent>
 
-        {/* Aba: Minhas Visitas */}
-        <TabsContent value="minhas" className="mt-6">
+        {/* Aba: Assumidas (sem data agendada) */}
+        <TabsContent value="assumidas" className="mt-6">
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-white">Minhas Visitas</h3>
-            <p className="text-sm text-zinc-400">Atendimentos sob sua responsabilidade</p>
+            <h3 className="text-lg font-semibold text-white">Solicitções Assumidas</h3>
+            <p className="text-sm text-zinc-400">Você assumiu a responsabilidade, mas ainda não agendou a visita</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {minhasEmAndamento.length === 0 ? (
+            {minhasAssumidas.length === 0 ? (
               <div className="col-span-full text-center py-12 text-zinc-500">
-                <p className="text-lg">Você não tem visitas agendadas</p>
-                <p className="text-sm mt-2">Assuma uma solicitação disponível para começar</p>
+                <p className="text-lg">Nenhuma solicitação assumida sem agendamento</p>
               </div>
             ) : (
-              minhasEmAndamento.map(renderCard)
+              minhasAssumidas.map(renderCard)
+            )}
+          </div>
+        </TabsContent>
+
+        {/* Aba: Agendadas */}
+        <TabsContent value="minhas" className="mt-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-white">Visitas Agendadas</h3>
+            <p className="text-sm text-zinc-400">Atendimentos com data de visita definida</p>
+          </div>
+          {minhasAgendadas.some(s => s.data_agendada && new Date(s.data_agendada) < new Date()) && (
+            <div className="mb-4 flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>Você tem visitas com data de agendamento vencida. Verifique os cards em vermelho.</span>
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {minhasAgendadas.length === 0 ? (
+              <div className="col-span-full text-center py-12 text-zinc-500">
+                <p className="text-lg">Você não tem visitas agendadas</p>
+                <p className="text-sm mt-2">Assuma uma solicitação e agende sua visita</p>
+              </div>
+            ) : (
+              minhasAgendadas.map(renderCard)
             )}
           </div>
         </TabsContent>
@@ -463,7 +539,22 @@ export default function KanbanSolicitacoesVoluntario({ userId }: KanbanVoluntari
               {selectedSolicitacao.status === "em_andamento" && selectedSolicitacao.voluntario_id === userId && (
                 <div className="flex gap-2 pt-4">
                   <Button
-                    onClick={() => setAgendarDialogOpen(true)}
+                    onClick={() => {
+                      // Pré-preencher com a data/hora já salva, se existir
+                      if (selectedSolicitacao?.data_agendada) {
+                        const existing = new Date(selectedSolicitacao.data_agendada)
+                        setDataAgendada(
+                          `${existing.getFullYear()}-${String(existing.getMonth() + 1).padStart(2, "0")}-${String(existing.getDate()).padStart(2, "0")}`
+                        )
+                        setHoraAgendada(
+                          `${String(existing.getHours()).padStart(2, "0")}:${String(existing.getMinutes()).padStart(2, "0")}`
+                        )
+                      } else {
+                        setDataAgendada("")
+                        setHoraAgendada("")
+                      }
+                      setAgendarDialogOpen(true)
+                    }}
                     className="flex-1 bg-purple-600 hover:bg-purple-700"
                   >
                     <Calendar className="h-4 w-4 mr-2" />
@@ -523,6 +614,7 @@ export default function KanbanSolicitacoesVoluntario({ userId }: KanbanVoluntari
                 id="data"
                 type="date"
                 value={dataAgendada}
+                min={new Date().toISOString().split("T")[0]}
                 onChange={(e) => setDataAgendada(e.target.value)}
                 className="bg-zinc-800 border-zinc-700 text-white"
               />

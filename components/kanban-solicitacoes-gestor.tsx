@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
-import { CheckCircle, XCircle, Loader2, Clock, User, MapPin } from 'lucide-react'
+import { CheckCircle, XCircle, Loader2, Clock, User, MapPin, AlertCircle } from 'lucide-react'
 import { useEffect, useState } from "react"
 import { notifyVoluntariosSolicitacaoAprovada } from "@/app/actions/notify-solicitacoes"
 
@@ -221,7 +221,8 @@ export default function KanbanSolicitacoesGestor() {
 
   const novas = solicitacoes.filter((s) => s.status === "nova")
   const aprovadas = solicitacoes.filter((s) => s.status === "aprovada")
-  const emAndamento = solicitacoes.filter((s) => s.status === "em_andamento")
+  const assumidas = solicitacoes.filter((s) => s.status === "em_andamento" && !s.data_agendada)
+  const agendadas = solicitacoes.filter((s) => s.status === "em_andamento" && !!s.data_agendada)
   const concluidas = solicitacoes.filter((s) => s.status === "concluida")
   const reprovadas = solicitacoes.filter((s) => s.status === "reprovada")
 
@@ -274,24 +275,53 @@ export default function KanbanSolicitacoesGestor() {
             </div>
           )}
 
-          {solicitacao.data_agendada && (
-            <div className="flex items-center gap-2 text-sm">
-              <Clock className="h-4 w-4 text-zinc-500" />
-              <span className="text-zinc-400">Agendado:</span>
-              <span className="text-white">
-                {new Date(solicitacao.data_agendada).toLocaleDateString("pt-BR")} às{" "}
-                {new Date(solicitacao.data_agendada).toLocaleTimeString("pt-BR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            </div>
+          {solicitacao.status === "concluida" ? (
+            <>
+              {solicitacao.data_agendada && (
+                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>Visita agendada: {new Date(solicitacao.data_agendada).toLocaleDateString("pt-BR")} às {new Date(solicitacao.data_agendada).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <Clock className="h-3.5 w-3.5" />
+                <span>Recebido em {new Date(solicitacao.created_at).toLocaleDateString("pt-BR")} às {new Date(solicitacao.created_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <Clock className="h-3.5 w-3.5" />
+                <span>Concluído em {new Date(solicitacao.updated_at).toLocaleDateString("pt-BR")} às {new Date(solicitacao.updated_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+              </div>
+            </>
+          ) : (
+            <>
+              {solicitacao.data_agendada && (() => {
+                const vencida = new Date(solicitacao.data_agendada) < new Date()
+                return (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className={`h-4 w-4 ${vencida ? "text-red-400" : "text-zinc-500"}`} />
+                    <span className={vencida ? "text-red-400" : "text-zinc-400"}>Visita agendada:</span>
+                    <span className={vencida ? "text-red-400 font-semibold" : "text-white"}>
+                      {new Date(solicitacao.data_agendada).toLocaleDateString("pt-BR")} às{" "}
+                      {new Date(solicitacao.data_agendada).toLocaleTimeString("pt-BR", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                )
+              })()}
+              {solicitacao.status === "em_andamento" && !solicitacao.data_agendada && (
+                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>Assumida em: {new Date(solicitacao.updated_at).toLocaleDateString("pt-BR")} às {new Date(solicitacao.updated_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <Clock className="h-3.5 w-3.5" />
+                <span>Recebido em: {new Date(solicitacao.created_at).toLocaleDateString("pt-BR")}</span>
+              </div>
+            </>
           )}
-
-          <div className="flex items-center gap-2 text-xs text-zinc-500">
-            <Clock className="h-3.5 w-3.5" />
-            <span>Criado em {new Date(solicitacao.created_at).toLocaleDateString("pt-BR")}</span>
-          </div>
         </div>
       </div>
     </Card>
@@ -330,10 +360,16 @@ export default function KanbanSolicitacoesGestor() {
               {aprovadas.length}
             </Badge>
           </TabsTrigger>
+          <TabsTrigger value="assumidas" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
+            Assumida
+            <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-400 ml-1">
+              {assumidas.length}
+            </Badge>
+          </TabsTrigger>
           <TabsTrigger value="andamento" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
             Agendada
             <Badge variant="secondary" className="bg-purple-500/20 text-purple-400 ml-1">
-              {emAndamento.length}
+              {agendadas.length}
             </Badge>
           </TabsTrigger>
           <TabsTrigger value="concluidas" className="gap-1 text-xs sm:text-sm whitespace-nowrap">
@@ -385,19 +421,42 @@ export default function KanbanSolicitacoesGestor() {
           </div>
         </TabsContent>
 
+        {/* Aba: Assumida (sem data agendada) */}
+        <TabsContent value="assumidas" className="mt-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold text-white">Assumidas</h3>
+            <p className="text-sm text-zinc-400">Solicitações com voluntário responsável, aguardando agendamento</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {assumidas.length === 0 ? (
+              <div className="col-span-full text-center py-12 text-zinc-500">
+                <p className="text-lg">Nenhuma solicitação assumida sem agendamento</p>
+              </div>
+            ) : (
+              assumidas.map(renderCard)
+            )}
+          </div>
+        </TabsContent>
+
         {/* Aba: Visita Agendada */}
         <TabsContent value="andamento" className="mt-6">
           <div className="mb-4">
             <h3 className="text-lg font-semibold text-white">Visita Agendada</h3>
             <p className="text-sm text-zinc-400">Atendimentos em andamento pelos voluntários</p>
           </div>
+          {agendadas.some(s => s.data_agendada && new Date(s.data_agendada) < new Date()) && (
+            <div className="mb-4 flex items-center gap-2 bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-lg text-sm">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <span>Existem visitas com data de agendamento vencida. Verifique os cards em vermelho.</span>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {emAndamento.length === 0 ? (
+            {agendadas.length === 0 ? (
               <div className="col-span-full text-center py-12 text-zinc-500">
                 <p className="text-lg">Nenhuma visita agendada no momento</p>
               </div>
             ) : (
-              emAndamento.map(renderCard)
+              agendadas.map(renderCard)
             )}
           </div>
         </TabsContent>
@@ -520,7 +579,7 @@ export default function KanbanSolicitacoesGestor() {
               <div className="space-y-2">
                 <h4 className="text-sm font-medium text-zinc-400">Informações do Sistema</h4>
                 <div className="text-sm text-zinc-400 space-y-1">
-                  <p>Criado em: {new Date(selectedSolicitacao.created_at).toLocaleString("pt-BR")}</p>
+                  <p>Recebido em: {new Date(selectedSolicitacao.created_at).toLocaleString("pt-BR")}</p>
                   <p>Atualizado em: {new Date(selectedSolicitacao.updated_at).toLocaleString("pt-BR")}</p>
                 </div>
               </div>

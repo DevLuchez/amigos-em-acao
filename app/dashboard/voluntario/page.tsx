@@ -13,9 +13,14 @@ export default async function VoluntarioPage() {
     redirect("/auth/login")
   }
 
-  const tipo = user.user_metadata?.tipo
+  // Busca o tipo do profiles (mais confiável que user_metadata, que pode estar ausente)
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("tipo")
+    .eq("id", user.id)
+    .single()
 
-  if (tipo === "gestor") {
+  if (profile?.tipo === "gestor") {
     redirect("/dashboard/gestor")
   }
 
