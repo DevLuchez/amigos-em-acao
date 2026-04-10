@@ -171,38 +171,6 @@ export default function FotosEventoDialog({
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Grid de fotos existentes */}
-            {fotos.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {fotos.map((foto) => (
-                  <div
-                    key={foto.id}
-                    className="relative group aspect-square rounded-lg overflow-hidden border border-zinc-700"
-                  >
-                    <img
-                      src={foto.url}
-                      alt="Foto do evento"
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                      <Button
-                        onClick={() => handleDelete(foto)}
-                        disabled={deletingId === foto.id}
-                        variant="destructive"
-                        size="icon"
-                        className="h-10 w-10"
-                      >
-                        {deletingId === foto.id ? (
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-5 w-5" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
 
             {/* Área de upload */}
             {fotos.length < MAX_FOTOS && (
@@ -237,6 +205,39 @@ export default function FotosEventoDialog({
                   disabled={uploading}
                 />
               </label>
+            )}
+
+            {/* Grid de fotos existentes */}
+            {fotos.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {fotos.map((foto) => (
+                  <div
+                    key={foto.id}
+                    className="relative group aspect-square rounded-lg overflow-hidden border border-zinc-700"
+                  >
+                    <img
+                      src={foto.url}
+                      alt="Foto do evento"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+                      <Button
+                        onClick={() => handleDelete(foto)}
+                        disabled={deletingId === foto.id}
+                        variant="destructive"
+                        size="icon"
+                        className="h-10 w-10"
+                      >
+                        {deletingId === foto.id ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-5 w-5" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
 
             {fotos.length === 0 && !uploading && (
