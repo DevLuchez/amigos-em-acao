@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import HeroSection from "@/components/hero-section"
 import JornadaSection from "@/components/jornada-section"
@@ -12,7 +12,8 @@ import ParceirosSection from "@/components/parceiros-section"
 import FeedbackSection from "@/components/feedback-section"
 import SmoothScrollHero from "@/components/ui/smooth-scroll-hero"
 
-export default function Page() {
+// Componente separado para usar useSearchParams (exige Suspense no Next.js 15)
+function CodeRedirector() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -23,8 +24,16 @@ export default function Page() {
     }
   }, [searchParams, router])
 
+  return null
+}
+
+export default function Page() {
   return (
     <div className="min-h-screen bg-white">
+      <Suspense fallback={null}>
+        <CodeRedirector />
+      </Suspense>
+
       {/* Hero Section */}
       <HeroSection />
 
