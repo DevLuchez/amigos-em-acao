@@ -144,7 +144,7 @@ export default function BeneficiadoCadastroPage() {
 
                   <div className="grid gap-2">
                     <Label htmlFor="email" className="text-white">
-                      E-mail
+                      E-mail (Opcional)
                     </Label>
                     <Input
                       id="email"

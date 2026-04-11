@@ -2,6 +2,7 @@
 import { Menu, X } from "lucide-react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
+import SupportDialog from "@/components/support-dialog"
 
 export default function HeroSection() {
   const [currentSlide, setCurrentSlide] = useState(0)
@@ -76,6 +77,7 @@ export default function HeroSection() {
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-white transition-all duration-300 ease-out group-hover:w-full"></span>
             </button>
           ))}
+          <SupportDialog variant="ghost-light" />
           <Link
             href="/auth/cadastro"
             aria-label="Cadastre-se na plataforma"
@@ -115,6 +117,7 @@ export default function HeroSection() {
                 {item.name}
               </button>
             ))}
+            <SupportDialog variant="ghost-light" className="text-2xl" />
             <Link
               href="/auth/cadastro"
               onClick={() => setIsMenuOpen(false)}

@@ -13,10 +13,12 @@ import {
   ChevronRight,
   LayoutDashboard,
   HandHeart,
+  HelpCircle,
 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { useSidebar } from "@/contexts/sidebar-context"
+import SupportDialog from "@/components/support-dialog"
 
 type SidebarProps = {
   userType: "gestor" | "voluntario"
@@ -116,6 +118,12 @@ export default function DashboardSidebar({ userType, userName }: SidebarProps) {
 
       {/* Bottom Actions */}
       <div className="border-t border-zinc-800 p-4 space-y-2">
+        {/* Suporte */}
+        <SupportDialog
+          variant="icon"
+          userName={userName}
+          isExpanded={isExpanded}
+        />
         <Link
           href={`/dashboard/${userType}/configuracoes`}
           className={cn(
