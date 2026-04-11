@@ -89,6 +89,14 @@ export default function LoginPage() {
                       placeholder="Sua senha"
                       className="bg-zinc-800 border-zinc-700 text-white"
                     />
+                    <div className="text-right">
+                      <Link
+                        href="/auth/esqueci-senha"
+                        className="text-xs text-zinc-400 hover:text-white underline underline-offset-4 transition-colors"
+                      >
+                        Esqueceu sua senha?
+                      </Link>
+                    </div>
                   </div>
                   {error && <p className="text-sm text-red-500">{error}</p>}
                   <Button type="submit" className="w-full" disabled={isLoading}>

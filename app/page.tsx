@@ -1,5 +1,7 @@
 "use client"
 
+import { useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import HeroSection from "@/components/hero-section"
 import JornadaSection from "@/components/jornada-section"
 import NossosPropositos from "@/components/nossos-propositos-section"
@@ -11,6 +13,16 @@ import FeedbackSection from "@/components/feedback-section"
 import SmoothScrollHero from "@/components/ui/smooth-scroll-hero"
 
 export default function Page() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const code = searchParams.get("code")
+    if (code) {
+      router.replace(`/auth/callback?code=${code}&next=/auth/nova-senha`)
+    }
+  }, [searchParams, router])
+
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
