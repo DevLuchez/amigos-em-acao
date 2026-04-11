@@ -2,6 +2,19 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
 export async function middleware(request: NextRequest) {
+  // Intercepta o ?code= que chega na raiz quando o Supabase usa a Site URL como fallback
+  // (acontece quando a redirectTo não está na lista de URLs permitidas do Supabase)
+  if (
+    request.nextUrl.pathname === "/" &&
+    request.nextUrl.searchParams.has("code")
+  ) {
+    const code = request.nextUrl.searchParams.get("code")!
+    const url = request.nextUrl.clone()
+    url.pathname = "/auth/callback"
+    url.search = `?code=${code}&next=/auth/nova-senha`
+    return NextResponse.redirect(url)
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -72,12 +85,14 @@ export async function middleware(request: NextRequest) {
   }
 
   // Redireciona usuários autenticados para fora das páginas de auth
-  // Ignora POST (server actions) e a página de cadastro-sucesso
+  // Ignora POST (server actions), cadastro-sucesso, nova-senha e callback (fluxo de reset)
   if (
     request.nextUrl.pathname.startsWith("/auth") &&
     user &&
     request.method === "GET" &&
-    !request.nextUrl.pathname.includes("/cadastro-sucesso")
+    !request.nextUrl.pathname.includes("/cadastro-sucesso") &&
+    !request.nextUrl.pathname.includes("/nova-senha") &&
+    !request.nextUrl.pathname.includes("/callback")
   ) {
     // Só redireciona se o profile já existe (fluxo de cadastro pode ainda não ter criado)
     const { data: profile } = await supabase
@@ -97,5 +112,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/auth/:path*"],
+  matcher: ["/", "/dashboard/:path*", "/auth/:path*"],
 }
