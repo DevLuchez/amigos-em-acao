@@ -2,19 +2,63 @@
 
 import { motion } from "framer-motion"
 import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
+import { getStatusEvento } from "@/lib/utils/evento-utils"
 
 export default function JornadaSection() {
-  const [hoveredMilestone, setHoveredMilestone] = useState<number | null>(null)
   const [isMounted, setIsMounted] = useState(false)
-  useEffect(() => setIsMounted(true), [])
+  const [eventosRealizados, setEventosRealizados] = useState(0)
+  const [voluntarios, setVoluntarios] = useState(0)
+  const [pessoasAjudadas, setPessoasAjudadas] = useState(0)
 
-  const milestones: any[] = []
+  useEffect(() => {
+    const loadEventosRealizados = async () => {
+      const supabase = createClient()
+      const { data } = await supabase.from("eventos").select("data")
+
+      if (data) {
+        const realizados = data.filter((e) => getStatusEvento(e.data) === "realizado")
+        setEventosRealizados(realizados.length)
+      }
+    }
+
+    const loadVoluntarios = async () => {
+      const supabase = createClient()
+      const { count } = await supabase.from("voluntarios").select("*", { count: "exact", head: true })
+
+      if (count !== null) {
+        setVoluntarios(count)
+      }
+    }
+
+    const loadPessoasAjudadas = async () => {
+      const supabase = createClient()
+      const { count, error } = await supabase
+        .from("solicitacoes_ajuda")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "concluida")
+
+      if (!error && count !== null) {
+        setPessoasAjudadas(count)
+      }
+    }
+
+    loadEventosRealizados()
+    loadVoluntarios()
+    loadPessoasAjudadas()
+    setIsMounted(true)
+  }, [])
+
+  const statistics = [
+    { number: "+100", label: "Voluntários" },
+    { number: "+60", label: "Famílias Atendidas/mês" },
+    { number: "+10", label: "Eventos Realizados/mês" },
+    { number: "+24", label: "Anos de Experiência" },
+  ]
 
   return (
     <section id="jornada" className="relative py-20 bg-white">
-      {/* Subtle Grid Pattern Removed */}
-
-      <div className="container mx-auto px-6 relative z-10">
+      <div className="container mx-auto px-6 relative z-10 flex flex-col items-center text-center">
         <motion.div
           initial={isMounted ? { opacity: 0, y: 20 } : false}
           whileInView={{ opacity: 1, y: 0 }}
@@ -39,51 +83,20 @@ export default function JornadaSection() {
           </div>
         </motion.div>
 
-        <div className="mb-20">
-          <div className="relative">
-
-            <div className="flex justify-center items-center relative">
-              <div className="flex space-x-32 md:space-x-48">
-                {milestones.map((milestone, index) => (
-                  <motion.div
-                    key={index}
-                    initial={isMounted ? { opacity: 0, y: 20 } : false}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: index * 0.2, ease: [0.16, 1, 0.3, 1] }}
-                    viewport={{ once: true }}
-                    className="flex flex-col items-center relative"
-                    onMouseEnter={() => setHoveredMilestone(index)}
-                    onMouseLeave={() => setHoveredMilestone(null)}
-                  >
-                    <div className="w-4 h-4 bg-gray-900 rounded-full border-4 border-white shadow-sm z-10 cursor-pointer hover:scale-110 transition-transform" />
-
-                    <div className="mt-6 text-center">
-                      <div className="text-2xl font-black text-gray-900 mb-2">{milestone.year}</div>
-                      <div className="text-lg font-bold text-gray-900 mb-2 tracking-wide">{milestone.title}</div>
-                      <div className="text-sm text-gray-600 max-w-xs leading-relaxed">{milestone.description}</div>
-                    </div>
-
-                    {hoveredMilestone === index && (
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
-                        className="absolute -top-32 bg-white p-2 border-2 border-gray-900 z-20"
-                        style={{ boxShadow: "4px 4px 0px hsl(var(--foreground))" }}
-                      >
-                        <img
-                          src={milestone.image || "/placeholder.svg"}
-                          alt={milestone.title}
-                          className="w-48 h-32 object-cover"
-                        />
-                      </motion.div>
-                    )}
-                  </motion.div>
-                ))}
-              </div>
+        <motion.div
+          initial={isMounted ? { opacity: 0, y: 20 } : false}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          viewport={{ once: true }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-8 w-full"
+        >
+          {statistics.map((stat, index) => (
+            <div key={index} className="text-center">
+              <div className="text-4xl md:text-5xl font-black text-gray-900 mb-2 tracking-wider">{stat.number}</div>
+              <div className="text-lg font-medium text-gray-600 tracking-wide">{stat.label}</div>
             </div>
-          </div>
-        </div>
+          ))}
+        </motion.div>
       </div>
     </section>
   )

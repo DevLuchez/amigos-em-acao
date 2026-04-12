@@ -3,7 +3,7 @@
 import type * as React from "react"
 import { useRef } from "react"
 import { motion, useMotionTemplate, useScroll, useTransform } from "framer-motion"
-import { Facebook, Instagram, MessageCircle, MapPin, Mail } from "lucide-react"
+import { Facebook, Instagram, MessageCircle, MapPin, Mail, Linkedin } from "lucide-react"
 
 interface SmoothScrollHeroProps {
   scrollHeight?: number
@@ -115,6 +115,16 @@ const SmoothScrollHero: React.FC<SmoothScrollHeroProps> = ({
                   aria-label="Instagram da Associação"
                 >
                   <Instagram className="w-6 h-6 text-white" />
+                </a>
+
+                <a
+                  href="https://www.linkedin.com/company/associa%C3%A7%C3%A3o-amigos-em-a%C3%A7%C3%A3o"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-12 h-12 bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
+                  aria-label="LinkedIn da Associação"
+                >
+                  <Linkedin className="w-6 h-6 text-white" />
                 </a>
               </div>
 

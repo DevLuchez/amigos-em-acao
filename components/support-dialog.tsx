@@ -197,15 +197,15 @@ export default function SupportDialog({
               <Label className="text-white">Mensagem *</Label>
               <Textarea
                 value={mensagem}
-                onChange={(e) => setMensagem(e.target.value.slice(0, 250))}
+                onChange={(e) => setMensagem(e.target.value.slice(0, 300))}
                 placeholder="Descreva sua dúvida, erro ou sugestão com o máximo de detalhes..."
                 rows={4}
                 required
-                maxLength={250}
+                maxLength={300}
                 className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 resize-none"
               />
-              <p className={`text-xs text-right ${mensagem.length >= 250 ? "text-red-400" : "text-zinc-500"}`}>
-                {mensagem.length}/250
+              <p className={`text-xs text-right ${mensagem.length >= 300 ? "text-red-400" : "text-zinc-500"}`}>
+                {mensagem.length}/300
               </p>
             </div>
 
