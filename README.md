@@ -1,4 +1,4 @@
-# v0-amigos-em-acao
+# amigos-em-acao
 
 This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
 
