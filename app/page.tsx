@@ -52,15 +52,10 @@ export default function Page() {
       <FeedbackSection />
 
       {/* Smooth Scroll Hero with CTA Overlay */}
-      <section id="join" className="relative">
-        <SmoothScrollHero
-          scrollHeight={2500}
-          desktopImage="https://www.bundaberg.qld.gov.au/files/assets/public/v/2/community/images/diverse_community_group_holding_hands_web.jpg?w=1600&h=600"
-          mobileImage="https://www.bundaberg.qld.gov.au/files/assets/public/v/2/community/images/diverse_community_group_holding_hands_web.jpg?w=1600&h=600"
-          initialClipPercentage={30}
-          finalClipPercentage={70}
-        />
-      </section>
+      <SmoothScrollHero
+        desktopImage="https://www.bundaberg.qld.gov.au/files/assets/public/v/2/community/images/diverse_community_group_holding_hands_web.jpg?w=1600&h=600"
+        mobileImage="https://www.bundaberg.qld.gov.au/files/assets/public/v/2/community/images/diverse_community_group_holding_hands_web.jpg?w=1600&h=600"
+      />
     </div>
   )
 }
